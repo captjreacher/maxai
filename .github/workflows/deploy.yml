@@ -7,50 +7,29 @@ on:
 
 jobs:
   deploy:
-    name: Deploy to Production
     runs-on: ubuntu-latest
 
     steps:
-      - name: Get latest code
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Install lftp
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y lftp
+        run: sudo apt-get update && sudo apt-get install -y lftp
 
-      - name: Test FTP Connection
-        run: |
-          lftp -d -c "
-          set ssl:verify-certificate no;
-          set ftp:ssl-force true;
-          set ftp:ssl-protect-data true;
-          open -u ${{ secrets.FTP_USERNAME }},${{ secrets.FTP_PASSWORD }} ${{ secrets.FTP_SERVER }};
-          ls
-          bye
-          "
-
-      - name: Sync MU-Plugins
+      - name: Deploy
         run: |
           lftp -c "
           set ssl:verify-certificate no;
           set ftp:ssl-force true;
           set ftp:ssl-protect-data true;
           open -u ${{ secrets.FTP_USERNAME }},${{ secrets.FTP_PASSWORD }} ${{ secrets.FTP_SERVER }};
+          
           mirror --reverse --verbose --no-perms \
-            ./public/wp-content/mu-plugins /maximisedai.com/wp-content/mu-plugins;
-          bye
-          "
+            ./public/wp-content/mu-plugins /wp-content/mu-plugins;
 
-      - name: Sync Theme
-        run: |
-          lftp -c "
-          set ssl:verify-certificate no;
-          set ftp:ssl-force true;
-          set ftp:ssl-protect-data true;
-          open -u ${{ secrets.FTP_USERNAME }},${{ secrets.FTP_PASSWORD }} ${{ secrets.FTP_SERVER }};
           mirror --reverse --verbose --no-perms \
             --exclude-glob assets/ \
-            ./public/wp-content/themes/saaslauncher /maximisedai.com/wp-content/themes/saaslauncher;
+            ./public/wp-content/themes/saaslauncher /wp-content/themes/saaslauncher;
+
           bye
           "
