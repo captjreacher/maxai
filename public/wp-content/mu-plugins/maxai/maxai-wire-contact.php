@@ -79,6 +79,10 @@ add_action('wp_head', function(){
   document.addEventListener('submit', function(ev){
     try{
       var form = ev && ev.target ? ev.target : null;
+      if (form && form.getAttribute && form.getAttribute('data-maxai-contact-owned') === '1') {
+        log('skipped owned form');
+        return;
+      }
       var p = buildPayload(form);
       // minimally require name + email to avoid noise
       if (p && p.name && p.email) {

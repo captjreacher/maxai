@@ -20,7 +20,9 @@ function maxai_contacts_db_id(){
 }
 
 /* -------- headers -------- */
-add_action('rest_pre_serve_request', function($served){
+add_filter('rest_pre_serve_request', function($served, $result, $request){
+  if (!($request instanceof WP_REST_Request)) return $served;
+  if ($request->get_route() !== '/maxai/v1/contact') return $served;
   if (!headers_sent()){
     header('Content-Type: application/json; charset=utf-8');
     header('X-Content-Type-Options: nosniff');
@@ -29,7 +31,7 @@ add_action('rest_pre_serve_request', function($served){
     header('Access-Control-Allow-Methods: POST, OPTIONS, GET');
   }
   return $served;
-}, 10);
+}, 10, 3);
 
 /* -------- routes -------- */
 add_action('rest_api_init', function () {
@@ -69,11 +71,6 @@ function maxai_discover_notion_props($token,$db,$force=false){
         if ($type==='phone_number')            $map['phone']       = array('name'=>$name,'type'=>$type);
         if ($type==='url')                     $map['page_url']    = array('name'=>$name,'type'=>$type);
         if ($type==='checkbox')                $map['consent']     = array('name'=>$name,'type'=>$type);
-// Only set received_at if Notion says it's a Date column
-if (!empty($real['received_at']['name']) && $real['received_at']['type'] === 'date') {
-  $props[$real['received_at']['name']] = maxai_n_date($now);
-}
-
         if ($type==='rich_text'){
           if (empty($map['company']) && (strpos($ln,'company')!==false || strpos($ln,'org')!==false)) $map['company'] = array('name'=>$name,'type'=>$type);
           if (empty($map['message']) && (strpos($ln,'message')!==false || strpos($ln,'notes')!==false || strpos($ln,'detail')!==false)) $map['message'] = array('name'=>$name,'type'=>$type);
