@@ -48,3 +48,9 @@ debug.log
 # Themes: ignore all by default, allow saaslauncher
 /wp-content/themes/*
 !/wp-content/themes/saaslauncher/
+
+# Ignore generated LiteSpeed files inside mu-plugins
+/wp-content/mu-plugins/mu-plugins/litespeed/
+
+# Ignore packaged mu-plugin zip artifacts
+/wp-content/mu-plugins.zip
