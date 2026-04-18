@@ -1,61 +1,42 @@
-# WordPress Core
-/wp-admin/
-/wp-includes/
-/wp-*.php
-/xmlrpc.php
-/license.txt
-/readme.html
+# WordPress core under /public
+/public/wp-admin/
+/public/wp-includes/
+/public/wp-*.php
+/public/xmlrpc.php
+/public/license.txt
+/public/readme.html
 
-# WordPress Config
-wp-config.php
+# WordPress config
+/public/wp-config.php
 .env
 .env.local
 
-# Uploads and Cache
-wp-content/uploads/
-wp-content/cache/
-wp-content/backup*/
-wp-content/backups/
-wp-content/upgrade/
-wp-content/ai2html-output/
+# Uploads and cache
+/public/wp-content/uploads/
+/public/wp-content/cache/
+/public/wp-content/backup*/
+/public/wp-content/backups/
+/public/wp-content/upgrade/
+
+# Default themes you do not want in repo
+/public/wp-content/themes/twentytwenty*/
+/public/wp-content/themes/twentytwentythree/
+/public/wp-content/themes/twentytwentyfour/
+/public/wp-content/themes/twentytwentyfive/
+
+# Local DB / Local app files
+/sql/
+/logs/
+/conf/
 
 # Logs
 *.log
-wp-content/debug.log
 error_log
 debug.log
 
-# Plugins (uncomment if you want to exclude all plugins)
-# wp-content/plugins/
-
-# Themes (uncomment if you want to exclude all themes except your custom one)
-# wp-content/themes/twenty*/
-
-# Node modules
-node_modules/
-npm-debug.log
-yarn-error.log
-
-# OS files
+# IDE / OS
+.vscode/
+.idea/
 .DS_Store
 Thumbs.db
 desktop.ini
-
-# IDE files
-.vscode/
-.idea/
-*.sublime-project
-*.sublime-workspace
-
-# Temporary files
-*.tmp
-*.swp
-*.swo
-*~
-
-# Local testing files
-quote-my-workflow-standalone.php
-wizard-subscribe-standalone.php
-debug-quote-page.html
-test-*.php
-test-*.html
