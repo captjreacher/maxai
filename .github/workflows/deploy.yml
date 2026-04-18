@@ -19,6 +19,17 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y lftp
 
+      - name: Test FTP Connection
+        run: |
+          lftp -d -c "
+          set ssl:verify-certificate no;
+          set ftp:ssl-force true;
+          set ftp:ssl-protect-data true;
+          open -u ${{ secrets.FTP_USERNAME }},${{ secrets.FTP_PASSWORD }} ${{ secrets.FTP_SERVER }};
+          ls
+          bye
+          "
+
       - name: Sync MU-Plugins
         run: |
           lftp -c "
@@ -27,8 +38,8 @@ jobs:
           set ftp:ssl-protect-data true;
           open -u ${{ secrets.FTP_USERNAME }},${{ secrets.FTP_PASSWORD }} ${{ secrets.FTP_SERVER }};
           mirror --reverse --verbose --no-perms \
-            mirror --reverse --verbose --no-perms \
-  ./public/wp-content/mu-plugins /maximisedai.com/wp-content/mu-plugins
+            ./public/wp-content/mu-plugins /maximisedai.com/wp-content/mu-plugins;
+          bye
           "
 
       - name: Sync Theme
@@ -40,5 +51,6 @@ jobs:
           open -u ${{ secrets.FTP_USERNAME }},${{ secrets.FTP_PASSWORD }} ${{ secrets.FTP_SERVER }};
           mirror --reverse --verbose --no-perms \
             --exclude-glob assets/ \
-            ./public/wp-content/themes/saaslauncher /maximisedai.com/wp-content/themes/saaslauncher
+            ./public/wp-content/themes/saaslauncher /maximisedai.com/wp-content/themes/saaslauncher;
+          bye
           "
