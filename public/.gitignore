@@ -1,42 +1,50 @@
-# WordPress core under /public
-/public/wp-admin/
-/public/wp-includes/
-/public/wp-*.php
-/public/xmlrpc.php
-/public/license.txt
-/public/readme.html
-
-# WordPress config
-/public/wp-config.php
-.env
-.env.local
-
-# Uploads and cache
-/public/wp-content/uploads/
-/public/wp-content/cache/
-/public/wp-content/backup*/
-/public/wp-content/backups/
-/public/wp-content/upgrade/
-
-# Default themes you do not want in repo
-/public/wp-content/themes/twentytwenty*/
-/public/wp-content/themes/twentytwentythree/
-/public/wp-content/themes/twentytwentyfour/
-/public/wp-content/themes/twentytwentyfive/
-
-# Local DB / Local app files
-/sql/
-/logs/
-/conf/
+# OS / editor
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
 
 # Logs
 *.log
 error_log
 debug.log
 
-# IDE / OS
-.vscode/
-.idea/
-.DS_Store
-Thumbs.db
-desktop.ini
+# Local / backup / temp
+../sql/
+../logs/
+../conf/
+*.sql
+*.zip
+
+# WordPress core in this folder
+/wp-admin/
+/wp-includes/
+/wp-*.php
+/xmlrpc.php
+/readme.html
+/license.txt
+
+# WordPress config
+/wp-config.php
+/wp-config-sample.php
+.env
+.env.*
+!.env.example
+
+# Uploads / cache / backups
+/wp-content/uploads/
+/wp-content/cache/
+/wp-content/upgrade/
+/wp-content/backup*/
+/wp-content/backups*/
+/wp-content/ai1wm-backups/
+/wp-content/wflogs/
+
+# Plugins: ignore all by default, allow only selected custom plugins if needed later
+/wp-content/plugins/*
+!/wp-content/plugins/.gitkeep
+
+# Themes: ignore all by default, allow saaslauncher
+/wp-content/themes/*
+!/wp-content/themes/saaslauncher/
