@@ -1,0 +1,41 @@
+name: Deploy to Production (Test Fix)
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🚚 Get latest code
+        uses: actions/checkout@v4
+
+      - name: 📂 Sync MU-Plugins
+        run: |
+          sudo apt-get update && sudo apt-get install -y lftp
+          lftp -c "
+          set ssl:verify-certificate no;
+          set ftp:ssl-force true;
+          set ftp:ssl-protect-data true;
+          open -u ${{ secrets.FTP_USERNAME }},${{ secrets.FTP_PASSWORD }} ${{ secrets.FTP_SERVER }};
+          mirror --reverse --verbose --no-perms \
+            ./wp-content/mu-plugins /wp-content/mu-plugins
+          "
+      
+      - name: 📂 Sync Theme
+        run: |
+          lftp -c "
+          set ssl:verify-certificate no;
+          set ftp:ssl-force true;
+          set ftp:ssl-protect-data true;
+          open -u ${{ secrets.FTP_USERNAME }},${{ secrets.FTP_PASSWORD }} ${{ secrets.FTP_SERVER }};
+          mirror --reverse --verbose --no-perms \
+            --exclude-glob assets/ \
+            ./wp-content/themes/saaslauncher /wp-content/themes/saaslauncher
+          "
+
+
+

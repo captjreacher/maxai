@@ -1,0 +1,15 @@
+# BEGIN WordPress
+<IfModule mod_rewrite.c>
+RewriteEngine On
+
+# Canonical host: force www
+RewriteCond %{HTTP_HOST} !^www\.maximisedai\.com$ [NC]
+RewriteRule ^(.*)$ https://www.maximisedai.com/$1 [L,R=301]
+
+# WP front controller
+RewriteRule ^index\.php$ - [L]
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule . /index.php [L]
+</IfModule>
+# END WordPress
