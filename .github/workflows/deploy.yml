@@ -76,10 +76,10 @@ jobs:
           open -p "${FTP_PORT:-21}" -u "$FTP_USERNAME","$FTP_PASSWORD" "$FTP_SERVER"
 
           mirror --reverse --verbose --no-perms \
-            --exclude '.git/' \
-            --exclude 'node_modules/' \
-            --exclude '*.bak' \
-            --exclude '*.backup' \
+            --exclude-glob '.git/' \
+            --exclude-glob 'node_modules/' \
+            --exclude-glob '*.bak' \
+            --exclude-glob '*.backup' \
             public/wp-content/mu-plugins/ \
             wp-content/mu-plugins/
 
@@ -98,10 +98,10 @@ jobs:
           open -p "${FTP_PORT:-21}" -u "$FTP_USERNAME","$FTP_PASSWORD" "$FTP_SERVER"
 
           mirror --reverse --verbose --no-perms \
-            --exclude '.git/' \
-            --exclude 'node_modules/' \
-            --exclude '*.bak' \
-            --exclude '*.backup' \
+            --exclude-glob '.git/' \
+            --exclude-glob 'node_modules/' \
+            --exclude-glob '*.bak' \
+            --exclude-glob '*.backup' \
             public/wp-content/themes/saaslauncher/ \
             wp-content/themes/saaslauncher/
 
