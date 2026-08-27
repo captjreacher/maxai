@@ -1,35 +1,109 @@
-name: Deploy to Production
+name: Deploy MaxAI WordPress
 
 on:
   push:
     branches:
       - main
+    paths:
+      - 'public/wp-content/themes/saaslauncher/**'
+      - 'public/wp-content/mu-plugins/**'
+      - '.github/workflows/deploy.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: maxai-production-deploy
+  cancel-in-progress: false
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
+    env:
+      FTP_SERVER: ${{ secrets.FTP_SERVER }}
+      FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+      FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+      FTP_PORT: ${{ secrets.FTP_PORT }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install lftp
-        run: sudo apt-get update && sudo apt-get install -y lftp
-
-      - name: Deploy
+      - name: Verify deploy sources
+        shell: bash
         run: |
-          lftp -c "
-          set ssl:verify-certificate no;
-          set ftp:ssl-force true;
-          set ftp:ssl-protect-data true;
-          open -u ${{ secrets.FTP_USERNAME }},${{ secrets.FTP_PASSWORD }} ${{ secrets.FTP_SERVER }};
-          
-          mirror --reverse --verbose --no-perms \
-            ./public/wp-content/mu-plugins /wp-content/mu-plugins;
+          test -d public/wp-content/mu-plugins || {
+            echo "Missing deploy source: public/wp-content/mu-plugins"
+            exit 1
+          }
 
-          mirror --reverse --verbose --no-perms \
-            --exclude-glob assets/ \
-            ./public/wp-content/themes/saaslauncher /wp-content/themes/saaslauncher;
+          test -d public/wp-content/themes/saaslauncher || {
+            echo "Missing deploy source: public/wp-content/themes/saaslauncher"
+            echo "The SaasLauncher theme must be tracked as normal repository files before production theme deployment can run."
+            exit 1
+          }
+
+      - name: Install lftp
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y lftp
+
+      - name: Verify FTPS connection
+        shell: bash
+        run: |
+          lftp <<EOF
+          set ssl:verify-certificate no
+          set ftp:ssl-force true
+          set ftp:ssl-protect-data true
+          set ftp:passive-mode true
+
+          open -p "${FTP_PORT:-21}" -u "$FTP_USERNAME","$FTP_PASSWORD" "$FTP_SERVER"
+
+          pwd
+          cls -la
 
           bye
-          "
+          EOF
+
+      - name: Deploy MaxAI MU plugins
+        shell: bash
+        run: |
+          lftp <<EOF
+          set ssl:verify-certificate no
+          set ftp:ssl-force true
+          set ftp:ssl-protect-data true
+          set ftp:passive-mode true
+
+          open -p "${FTP_PORT:-21}" -u "$FTP_USERNAME","$FTP_PASSWORD" "$FTP_SERVER"
+
+          mirror --reverse --verbose --no-perms \
+            --exclude '.git/' \
+            --exclude 'node_modules/' \
+            --exclude '*.bak' \
+            --exclude '*.backup' \
+            public/wp-content/mu-plugins/ \
+            wp-content/mu-plugins/
+
+          bye
+          EOF
+
+      - name: Deploy SaasLauncher theme
+        shell: bash
+        run: |
+          lftp <<EOF
+          set ssl:verify-certificate no
+          set ftp:ssl-force true
+          set ftp:ssl-protect-data true
+          set ftp:passive-mode true
+
+          open -p "${FTP_PORT:-21}" -u "$FTP_USERNAME","$FTP_PASSWORD" "$FTP_SERVER"
+
+          mirror --reverse --verbose --no-perms \
+            --exclude '.git/' \
+            --exclude 'node_modules/' \
+            --exclude '*.bak' \
+            --exclude '*.backup' \
+            public/wp-content/themes/saaslauncher/ \
+            wp-content/themes/saaslauncher/
+
+          bye
+          EOF
