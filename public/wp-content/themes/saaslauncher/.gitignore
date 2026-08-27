@@ -1,0 +1,9 @@
+# WordPress theme repo
+node_modules/
+vendor/
+dist/
+build/
+*.log
+*.env
+.DS_Store
+Thumbs.db
