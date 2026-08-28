@@ -2,7 +2,7 @@
 /**
  * Plugin Name: MAXAI MU Loader
  * Description: Single bootstrap file for Maximised AI must-use modules.
- * Version: 2.0.0
+ * Version: 2.1.0
  */
 
 if (!defined('ABSPATH')) {
@@ -14,7 +14,7 @@ if (defined('MAXAI_MU_BOOTSTRAPPED')) {
 }
 
 define('MAXAI_MU_BOOTSTRAPPED', true);
-define('MAXAI_MU_VERSION', '2.0.0');
+define('MAXAI_MU_VERSION', '2.1.0');
 define('MAXAI_MU_DIR', __DIR__);
 define('MAXAI_MU_URL', content_url('mu-plugins'));
 define('MAXAI_MU_SUPPORT_DIR', MAXAI_MU_DIR . '/maxai');
@@ -90,7 +90,7 @@ function maxai_enqueue_chat_assets() {
 add_action('wp_enqueue_scripts', 'maxai_enqueue_chat_assets');
 
 $optional_modules = [
-    'maxai-contact-to-notion.php',
+    'maxai-public-intake.php',
     'maxai-listener.php',
     'maxai-wire-contact.php',
     'mu-maxai-backtotop.php',
