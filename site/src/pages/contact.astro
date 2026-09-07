@@ -1,0 +1,684 @@
+---
+import Button from '../components/Button.astro';
+import SectionHeading from '../components/SectionHeading.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { Image } from 'astro:assets';
+import { loadPageData } from '../data/pages';
+import contactImage from '../images/whats-not-working.jpg';
+
+const page = await loadPageData('contact');
+const intakeEndpoint =
+  import.meta.env.PUBLIC_MAXAI_INTAKE_ENDPOINT ??
+  'https://jqfodlzcsgfocyuawzyx.supabase.co/functions/v1/mgrnz-public-intake';
+---
+
+<BaseLayout
+  title={page.title}
+  description={page.description}
+>
+  <section class="contact-hero">
+    <div class="contact-hero__inner container">
+      <div class="contact-hero__content">
+        <p class="eyebrow">{page.hero.eyebrow}</p>
+        <h1>{page.hero.heading}</h1>
+        <p class="contact-hero__copy">
+          {page.hero.description}
+        </p>
+      </div>
+
+      <div class="contact-hero__signal surface">
+        <Image
+          src={contactImage}
+          alt={page.hero.imageAlt}
+          width={contactImage.width}
+          height={contactImage.height}
+          loading="eager"
+        />
+      </div>
+    </div>
+  </section>
+
+  <section class="section-band section-band--embers" aria-labelledby={page.context.id}>
+    <div class="container context-layout">
+      <SectionHeading
+        id={page.context.id}
+        eyebrow={page.context.eyebrow}
+        title={page.context.heading}
+        intro={page.context.description}
+      />
+
+      <ul class="context-list">
+        {page.context.items.map((item, index) => (
+          <li>
+            <span>{String(index + 1).padStart(2, '0')}</span>
+            {item}
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <section class="section-band form-band section-band--horizon" aria-labelledby="problem-form-heading">
+    <div class="container form-layout">
+      <div class="form-intro">
+        <p class="eyebrow">{page.form.eyebrow}</p>
+        <h2 id="problem-form-heading" data-form-heading>{page.form.heading}</h2>
+        <p>
+          {page.form.description}
+        </p>
+      </div>
+
+      <form
+        class="problem-form surface"
+        method="post"
+        data-contact-form
+        data-intake-endpoint={intakeEndpoint}
+        data-submit-sending-label={page.form.submitSendingLabel}
+        data-service-submit-label={page.form.service.submitLabel}
+        data-service-placeholder={page.form.service.problemPlaceholder}
+        data-service-heading={page.form.service.heading}
+        data-service-status={page.form.service.status}
+        data-status-unavailable={page.form.status.unavailable}
+        data-status-problem-too-short={page.form.status.problemTooShort}
+        data-status-problem-too-long={page.form.status.problemTooLong}
+        data-status-review-problem={page.form.status.reviewProblem}
+        data-status-sending={page.form.status.sending}
+        data-status-success={page.form.status.success}
+        data-status-error={page.form.status.error}
+        aria-labelledby="problem-form-heading"
+        aria-describedby="form-status privacy-note"
+      >
+        <div class="field-grid">
+          <div class="form-field">
+            <label for="name">{page.form.fields.name}</label>
+            <input id="name" name="name" type="text" autocomplete="name" maxlength="120" required />
+          </div>
+
+          <div class="form-field">
+            <label for="email">{page.form.fields.email}</label>
+            <input id="email" name="email" type="email" autocomplete="email" maxlength="320" required />
+          </div>
+
+          <div class="form-field">
+            <label for="phone">{page.form.fields.phone} <span>{page.form.fields.phoneOptional}</span></label>
+            <input id="phone" name="phone" type="tel" autocomplete="tel" />
+          </div>
+
+          <div class="form-field">
+            <label for="organisation">{page.form.fields.organisation}</label>
+            <input
+              id="organisation"
+              name="organisation"
+              type="text"
+              autocomplete="organization"
+              maxlength="160"
+              required
+            />
+          </div>
+
+          <div class="form-field form-field--full">
+            <label for="problem">{page.form.fields.problem}</label>
+            <textarea
+              id="problem"
+              name="problem"
+              rows="7"
+              minlength="12"
+              maxlength="2000"
+              required
+            ></textarea>
+          </div>
+
+          <div class="form-field">
+            <label for="category">{page.form.fields.category}</label>
+            <select id="category" name="category" required>
+              <option value="" selected disabled>{page.form.fields.categoryPlaceholder}</option>
+              {page.form.categories.map((category) => <option value={category}>{category}</option>)}
+            </select>
+          </div>
+
+          <div class="form-field">
+            <label for="timing">{page.form.fields.timing}</label>
+            <select id="timing" name="timing" required>
+              <option value="" selected disabled>{page.form.fields.timingPlaceholder}</option>
+              {page.form.timingOptions.map((timing) => <option value={timing}>{timing}</option>)}
+            </select>
+          </div>
+
+          <div class="honeypot" aria-hidden="true">
+            <label for="website">{page.form.fields.website}</label>
+            <input
+              id="website"
+              name="website"
+              type="text"
+              autocomplete="off"
+              tabindex="-1"
+            />
+          </div>
+        </div>
+
+        <button class="form-submit" type="submit" data-submit-button>
+          <span data-submit-label>{page.form.submitLabel}</span>
+        </button>
+        <p class="form-status" id="form-status" aria-live="polite" aria-atomic="true"></p>
+        <p class="privacy-note" id="privacy-note">
+          {page.form.privacyNote}
+        </p>
+      </form>
+    </div>
+  </section>
+
+  <section class="section-band section-band--quiet" aria-labelledby={page.mgrnz.id}>
+    <div class="container mgrnz-panel surface">
+      <div class="mgrnz-panel__copy">
+        <p class="eyebrow">{page.mgrnz.eyebrow}</p>
+        <h2 id={page.mgrnz.id}>{page.mgrnz.heading}</h2>
+        <p>{page.mgrnz.description}</p>
+        <Button href={page.mgrnz.cta.href} variant="secondary">{page.mgrnz.cta.label}</Button>
+      </div>
+
+      <div class="mgrnz-panel__focus">
+        <p>{page.mgrnz.focusLabel}</p>
+        <ul>
+          {page.mgrnz.focus.map((item) => <li>{item}</li>)}
+        </ul>
+      </div>
+
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .contact-hero {
+    position: relative;
+    overflow: hidden;
+    padding-block: clamp(5rem, 11vw, 8.5rem) clamp(4rem, 9vw, 6.5rem);
+  }
+
+  .contact-hero::before {
+    position: absolute;
+    right: 7vw;
+    top: 3rem;
+    z-index: -1;
+    width: min(44vw, 34rem);
+    height: min(44vw, 34rem);
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 79, 0, 0.2), transparent 64%);
+    filter: blur(26px);
+    content: "";
+  }
+
+  .contact-hero__inner {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(18rem, 26rem);
+    gap: clamp(2rem, 7vw, 5rem);
+    align-items: center;
+  }
+
+  .contact-hero__content {
+    max-width: 60rem;
+  }
+
+  .contact-hero h1 {
+    margin: 0;
+    max-width: 12ch;
+    font-family: var(--font-display);
+    font-size: clamp(3rem, 9vw, 6.9rem);
+    font-weight: 900;
+    line-height: 0.92;
+    letter-spacing: 0;
+  }
+
+  .contact-hero__copy {
+    max-width: 45rem;
+    margin: var(--space-lg) 0 0;
+    color: var(--color-text-muted);
+    font-size: clamp(1.05rem, 2vw, 1.25rem);
+  }
+
+  .contact-hero__signal {
+    position: relative;
+    min-height: 26rem;
+    overflow: hidden;
+    background: var(--color-panel-hot);
+  }
+
+  .contact-hero__signal img {
+    width: 100%;
+    height: 100%;
+    min-height: inherit;
+    object-fit: contain;
+  }
+
+  /* Kept as a restrained frame around the supplied orb image. */
+  .contact-hero__signal::before {
+    position: absolute;
+    inset: 14%;
+    border: 1px solid var(--color-border-strong);
+    border-radius: 50%;
+    box-shadow: var(--shadow-ember), inset 0 0 55px rgba(255, 79, 0, 0.1);
+    content: "";
+  }
+
+  .contact-hero__signal span {
+    position: relative;
+    z-index: 1;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: var(--space-sm) var(--space-md);
+    background: var(--color-panel);
+    font-size: 0.72rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+  }
+
+  .contact-hero__signal i {
+    position: absolute;
+    z-index: 1;
+    display: grid;
+    width: 3.2rem;
+    height: 3.2rem;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--color-brand);
+    box-shadow: 0 0 28px rgba(255, 79, 0, 0.72);
+    color: var(--color-ink);
+    font-size: 1.5rem;
+    font-style: normal;
+    font-weight: 900;
+  }
+
+  .context-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+    gap: clamp(2.5rem, 7vw, 5rem);
+    align-items: start;
+  }
+
+  .context-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .context-list li {
+    display: grid;
+    grid-template-columns: 3rem minmax(0, 1fr);
+    gap: var(--space-md);
+    border-top: 1px solid var(--color-border);
+    padding-block: var(--space-lg);
+    font-size: clamp(1.05rem, 2vw, 1.25rem);
+    font-weight: 800;
+  }
+
+  .context-list li:last-child {
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .context-list span {
+    color: var(--color-brand);
+    font-size: 0.78rem;
+  }
+
+  .form-layout {
+    display: grid;
+    grid-template-columns: minmax(17rem, 0.62fr) minmax(0, 1.38fr);
+    gap: clamp(2.5rem, 7vw, 5rem);
+    align-items: start;
+  }
+
+  .form-intro {
+    position: sticky;
+    top: 7rem;
+  }
+
+  .form-intro h2 {
+    margin: 0;
+    font-size: clamp(2.2rem, 5vw, 4.5rem);
+    line-height: 0.96;
+  }
+
+  .form-intro > p:last-child {
+    margin: var(--space-lg) 0 0;
+    color: var(--color-text-muted);
+    font-size: clamp(1rem, 1.8vw, 1.16rem);
+  }
+
+  .problem-form {
+    padding: clamp(1.25rem, 4vw, 2.5rem);
+  }
+
+  .field-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-lg);
+  }
+
+  .form-field {
+    display: grid;
+    gap: var(--space-xs);
+  }
+
+  .form-field--full {
+    grid-column: 1 / -1;
+  }
+
+  .honeypot {
+    position: absolute;
+    overflow: hidden;
+    width: 1px;
+    height: 1px;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .form-field label {
+    color: var(--color-text);
+    font-size: 0.9rem;
+    font-weight: 800;
+  }
+
+  .form-field label span {
+    color: var(--color-text-subtle);
+    font-weight: 600;
+  }
+
+  .form-field input,
+  .form-field textarea,
+  .form-field select {
+    width: 100%;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 0.82rem 0.9rem;
+    background: var(--color-bg-elevated);
+    color: var(--color-text);
+  }
+
+  .form-field textarea {
+    min-height: 11rem;
+    resize: vertical;
+  }
+
+  .form-field input:hover,
+  .form-field textarea:hover,
+  .form-field select:hover {
+    border-color: var(--color-border-strong);
+  }
+
+  .form-field input:focus,
+  .form-field textarea:focus,
+  .form-field select:focus {
+    border-color: var(--color-brand-amber);
+    outline: 2px solid rgba(255, 179, 71, 0.24);
+    outline-offset: 2px;
+  }
+
+  .form-submit {
+    display: inline-flex;
+    min-height: 2.85rem;
+    align-items: center;
+    justify-content: center;
+    margin-top: var(--space-xl);
+    border: 1px solid transparent;
+    border-radius: var(--radius-md);
+    padding: 0.78rem 1rem;
+    background: var(--color-brand);
+    box-shadow: var(--shadow-button);
+    color: var(--color-ink);
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 800;
+    line-height: 1;
+  }
+
+  .form-submit:hover {
+    background: var(--color-brand-hot);
+  }
+
+  .form-submit:disabled {
+    cursor: wait;
+    opacity: 0.62;
+  }
+
+  .form-status {
+    min-height: 1.5em;
+    margin: var(--space-md) 0 0;
+    color: var(--color-text-muted);
+    font-size: 0.92rem;
+    font-weight: 700;
+  }
+
+  .form-status[data-state="success"] {
+    color: var(--color-brand-amber);
+  }
+
+  .form-status[data-state="error"] {
+    color: #ff9a72;
+  }
+
+  .privacy-note {
+    margin: var(--space-lg) 0 0;
+    border-top: 1px solid var(--color-border);
+    padding-top: var(--space-lg);
+    color: var(--color-text-subtle);
+    font-size: 0.86rem;
+  }
+
+  .mgrnz-panel {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(16rem, 0.9fr);
+    gap: clamp(2rem, 6vw, 4rem);
+    overflow: hidden;
+    padding: clamp(1.5rem, 4vw, 3rem);
+    background:
+      radial-gradient(circle at 86% 20%, rgba(255, 79, 0, 0.16), transparent 22rem),
+      linear-gradient(145deg, rgba(255, 79, 0, 0.08), transparent 40%),
+      var(--color-panel);
+  }
+
+  .mgrnz-panel h2 {
+    margin: 0;
+    font-size: clamp(2.2rem, 5vw, 4.4rem);
+    line-height: 0.96;
+  }
+
+  .mgrnz-panel__copy > p:not(.eyebrow) {
+    margin: var(--space-lg) 0;
+    max-width: 42rem;
+    color: var(--color-text-muted);
+    font-size: clamp(1rem, 1.8vw, 1.16rem);
+  }
+
+  .mgrnz-panel__focus {
+    border-left: 1px solid var(--color-border-strong);
+    padding-left: clamp(1rem, 3vw, 2rem);
+  }
+
+  .mgrnz-panel__focus > p {
+    margin: 0;
+    color: var(--color-brand-amber);
+    font-size: 0.76rem;
+    font-weight: 900;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .mgrnz-panel__focus ul {
+    display: grid;
+    gap: var(--space-sm);
+    margin: var(--space-lg) 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .mgrnz-panel__focus li {
+    border-top: 1px solid var(--color-border);
+    padding-top: var(--space-sm);
+    color: var(--color-text-muted);
+    font-weight: 800;
+  }
+
+  @media (max-width: 900px) {
+    .contact-hero__inner,
+    .context-layout,
+    .form-layout,
+    .mgrnz-panel {
+      grid-template-columns: 1fr;
+    }
+
+    .form-intro {
+      position: static;
+    }
+
+    .mgrnz-panel__focus {
+      border-top: 1px solid var(--color-border-strong);
+      border-left: 0;
+      padding-top: var(--space-lg);
+      padding-left: 0;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .field-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .form-field--full {
+      grid-column: auto;
+    }
+  }
+
+  @media (max-width: 560px) {
+    .contact-hero {
+      padding-block-start: 3.5rem;
+    }
+
+    .contact-hero h1 {
+      font-size: clamp(2.8rem, 15vw, 4.5rem);
+    }
+
+    .contact-hero__signal {
+      min-height: 19rem;
+    }
+  }
+</style>
+
+<script>
+  import {
+    MESSAGE_MAX_LENGTH,
+    MESSAGE_MIN_LENGTH,
+    buildIntakePayload,
+    resolveServiceContext,
+    submitIntake,
+  } from '../scripts/contact-intake.js';
+
+  const form = document.querySelector('[data-contact-form]');
+  const submitButton = form?.querySelector('[data-submit-button]');
+  const submitLabel = form?.querySelector('[data-submit-label]');
+  const status = form?.querySelector('#form-status');
+  const problemField = form?.querySelector('#problem');
+  const formHeading = document.querySelector('[data-form-heading]');
+
+  if (
+    form instanceof HTMLFormElement &&
+    submitButton instanceof HTMLButtonElement &&
+    submitLabel instanceof HTMLElement &&
+    status instanceof HTMLParagraphElement &&
+    problemField instanceof HTMLTextAreaElement
+  ) {
+    const endpoint = form.dataset.intakeEndpoint?.trim() ?? '';
+    const service = resolveServiceContext(
+      new URLSearchParams(window.location.search).get('service'),
+    );
+    const copy = (name) => form.dataset[name] ?? '';
+    let pending = false;
+    let idleSubmitLabel = submitLabel.textContent?.trim() ?? '';
+
+    const setStatus = (message, state = '') => {
+      status.textContent = message;
+      if (state) {
+        status.dataset.state = state;
+      } else {
+        delete status.dataset.state;
+      }
+    };
+
+    const setPending = (isPending) => {
+      pending = isPending;
+      submitButton.disabled = isPending;
+      submitLabel.textContent = isPending ? copy('submitSendingLabel') : idleSubmitLabel;
+      form.setAttribute('aria-busy', String(isPending));
+    };      if (service) {
+      form.dataset.serviceContext = service.label;
+      idleSubmitLabel = copy('serviceSubmitLabel');
+      submitLabel.textContent = idleSubmitLabel;
+      problemField.placeholder = copy('servicePlaceholder');
+      if (formHeading instanceof HTMLHeadingElement) {
+        formHeading.textContent = copy('serviceHeading');
+      }
+      setStatus(copy('serviceStatus'));
+    }
+
+    if (!endpoint) {
+      submitButton.disabled = true;
+      setStatus(copy('statusUnavailable'), 'error');
+    }
+
+    problemField.addEventListener('input', () => {
+      problemField.setCustomValidity('');
+    });
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+
+      if (pending || !endpoint || !form.reportValidity()) {
+        return;
+      }
+
+      const formData = new FormData(form);
+      const fields = {
+        name: String(formData.get('name') ?? ''),
+        email: String(formData.get('email') ?? ''),
+        phone: String(formData.get('phone') ?? ''),
+        organisation: String(formData.get('organisation') ?? ''),
+        problem: String(formData.get('problem') ?? ''),
+        category: String(formData.get('category') ?? ''),
+        timing: String(formData.get('timing') ?? ''),
+        serviceContext: form.dataset.serviceContext ?? '',
+        website: String(formData.get('website') ?? ''),
+      };
+      const payload = buildIntakePayload(
+        fields,
+        document.referrer,
+        window.location.pathname,
+      );
+
+      problemField.setCustomValidity('');
+      if (payload.message.length < MESSAGE_MIN_LENGTH) {
+        problemField.setCustomValidity(copy('statusProblemTooShort'));
+      } else if (payload.message.length > MESSAGE_MAX_LENGTH) {
+        problemField.setCustomValidity(copy('statusProblemTooLong'));
+      }
+
+      if (!problemField.checkValidity()) {
+        problemField.reportValidity();
+        setStatus(copy('statusReviewProblem'), 'error');
+        return;
+      }
+
+      setPending(true);
+      setStatus(copy('statusSending'));
+
+      try {
+        await submitIntake(endpoint, payload);
+
+        form.reset();
+        problemField.setCustomValidity('');
+        setStatus(copy('statusSuccess'), 'success');
+      } catch {
+        setStatus(copy('statusError'), 'error');
+      } finally {
+        setPending(false);
+      }
+    });
+  }
+</script>

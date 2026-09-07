@@ -1,0 +1,205 @@
+---
+import Button from './Button.astro';
+import { primaryNavigation, site } from '../data/site';
+import headerLogo from '../images/Logo as pic.jpg';
+
+const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
+---
+
+<header class="site-header">
+  <div class="site-header__inner container">
+    <a class="brand" href="/" aria-label="MaximisedAI home">
+      <img
+        class="brand__logo"
+        src={headerLogo.src}
+        alt="MaximisedAI"
+        width={headerLogo.width}
+        height={headerLogo.height}
+      />
+    </a>
+
+    <div class="desktop-nav">
+      <nav class="primary-nav" aria-label="Primary navigation">
+        {
+          primaryNavigation.map((item) => {
+            const itemPath = item.href.replace(/\/$/, '') || '/';
+            const isCurrent = currentPath === itemPath;
+
+            return (
+              <a href={item.href} aria-current={isCurrent ? 'page' : undefined}>
+                {item.label}
+              </a>
+            );
+          })
+        }
+      </nav>
+
+      <Button href={site.cta.href}>{site.cta.label}</Button>
+    </div>
+
+    <details class="mobile-nav">
+      <summary aria-label="Open navigation">
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+      </summary>
+      <nav aria-label="Mobile navigation">
+        {
+          primaryNavigation.map((item) => {
+            const itemPath = item.href.replace(/\/$/, '') || '/';
+            const isCurrent = currentPath === itemPath;
+
+            return (
+              <a href={item.href} aria-current={isCurrent ? 'page' : undefined}>
+                {item.label}
+              </a>
+            );
+          })
+        }
+        <Button href={site.cta.href}>{site.cta.label}</Button>
+      </nav>
+    </details>
+  </div>
+</header>
+
+<style>
+  .site-header {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    border-bottom: 1px solid var(--color-border);
+    background:
+      linear-gradient(90deg, rgba(255, 79, 0, 0.08), transparent 36%),
+      rgba(5, 5, 5, 0.9);
+    backdrop-filter: blur(18px);
+  }
+
+  .site-header__inner {
+    display: flex;
+    min-height: 5rem;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-lg);
+    padding-block: var(--space-sm);
+  }
+
+  .brand {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    color: var(--color-text);
+    text-decoration: none;
+  }
+
+  .brand__logo {
+    width: clamp(9.5rem, 16vw, 13rem);
+    height: auto;
+    filter: drop-shadow(0 0 18px rgba(255, 79, 0, 0.2));
+  }
+
+  .desktop-nav {
+    display: flex;
+    flex: 1 1 auto;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--space-lg);
+  }
+
+  .primary-nav {
+    display: flex;
+    flex: 1 1 auto;
+    flex-wrap: nowrap;
+    justify-content: flex-end;
+    gap: 0.25rem;
+  }
+
+  .primary-nav a {
+    border-radius: var(--radius-sm);
+    padding: 0.55rem 0.68rem;
+    color: var(--color-text-muted);
+    font-size: 0.9rem;
+    font-weight: 700;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  .primary-nav a:hover,
+  .primary-nav a[aria-current="page"] {
+    background: rgba(255, 79, 0, 0.1);
+    color: var(--color-text);
+  }
+
+  .mobile-nav {
+    display: none;
+  }
+
+  .mobile-nav summary {
+    display: inline-flex;
+    width: 2.8rem;
+    height: 2.8rem;
+    cursor: pointer;
+    list-style: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-md);
+    background: rgba(255, 79, 0, 0.08);
+  }
+
+  .mobile-nav summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .mobile-nav summary span {
+    width: 1.15rem;
+    height: 2px;
+    border-radius: 999px;
+    background: var(--color-text);
+  }
+
+  .mobile-nav nav {
+    position: absolute;
+    right: 1rem;
+    left: 1rem;
+    top: calc(100% + 0.5rem);
+    display: grid;
+    gap: var(--space-xs);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-md);
+    background: rgba(9, 9, 9, 0.98);
+    box-shadow: var(--shadow-panel);
+  }
+
+  .mobile-nav nav a:not(.button) {
+    border-radius: var(--radius-sm);
+    padding: var(--space-sm);
+    color: var(--color-text-muted);
+    font-weight: 800;
+    text-decoration: none;
+  }
+
+  .mobile-nav nav a:not(.button):hover,
+  .mobile-nav nav a:not(.button)[aria-current="page"] {
+    background: rgba(255, 79, 0, 0.1);
+    color: var(--color-text);
+  }
+
+  @media (max-width: 980px) {
+    .desktop-nav {
+      display: none;
+    }
+
+    .mobile-nav {
+      display: block;
+    }
+  }
+
+  @media (max-width: 520px) {
+    .site-header__inner {
+      min-height: auto;
+    }
+  }
+</style>

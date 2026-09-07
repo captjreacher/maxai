@@ -1,0 +1,301 @@
+---
+import Button from '../components/Button.astro';
+import SectionHeading from '../components/SectionHeading.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { Image } from 'astro:assets';
+import driveDiagram from '../images/DRIVE-Model-June26.png';
+import { getDriveProductExperience } from '../data/product-catalogue.js';
+import { loadPageData } from '../data/pages';
+import { loadBillingCatalogueSnapshot } from '../server/billing-catalogue.js';
+
+const page = await loadPageData('products');
+const driveTitleParts = page.drive.heading.split(' → ');
+// This executes in Astro's build/server frontmatter. Billing credentials and
+// privileged responses are never passed to the browser.
+const billingCatalogue = await loadBillingCatalogueSnapshot({
+  env: {
+    MAXAI_BILLING_CATALOGUE_API_BASE_URL:
+      import.meta.env.MAXAI_BILLING_CATALOGUE_API_BASE_URL,
+    MAXAI_BILLING_CATALOGUE_BEARER_TOKEN:
+      import.meta.env.MAXAI_BILLING_CATALOGUE_BEARER_TOKEN,
+  },
+});
+const stages = getDriveProductExperience(billingCatalogue, page.productStages);
+---
+
+<BaseLayout
+  title={page.title}
+  description={page.description}
+>
+  <section class="products-hero section-band--fire-glow">
+    <div class="products-hero__inner container">
+      <div class="products-hero__content">
+        <p class="eyebrow">{page.hero.eyebrow}</p>
+        <h1>{page.hero.heading}</h1>
+        <p class="products-hero__copy">
+          {page.hero.description}
+        </p>
+        <div class="products-hero__actions">
+          <Button href={page.hero.primaryCta.href}>{page.hero.primaryCta.label}</Button>
+          <Button href={page.hero.secondaryCta.href} variant="secondary">{page.hero.secondaryCta.label}</Button>
+        </div>
+      </div>
+
+      <aside class="drive-signal surface" aria-label="DRIVE product journey">
+        <p>{page.hero.signalLabel}</p>
+        <ol>
+          {stages.map((stage, index) => (
+            <li>
+              <span>{String(index + 1).padStart(2, '0')}</span>
+              <strong>{stage.title}</strong>
+              <small>{stage.marker}</small>
+            </li>
+          ))}
+        </ol>
+      </aside>
+    </div>
+  </section>
+
+  <section class="section-band section-band--quiet" aria-labelledby={page.drive.id}>
+    <div class="container">
+      <SectionHeading
+        id={page.drive.id}
+        eyebrow={page.drive.eyebrow}
+        title={
+          <>
+            {driveTitleParts.map((part, index) => (
+              <>
+                {index > 0 && ' → '}
+                <span class="drive-letter">{part.charAt(0)}</span>{part.slice(1)}
+              </>
+            ))}
+          </>
+        }
+        intro={page.drive.description}
+      />
+
+      <ol class="drive-rail">
+        {stages.map((stage, index) => (
+          <li>
+            <span>{String(index + 1).padStart(2, '0')}</span>
+            <strong><b class="drive-letter">{stage.title.charAt(0)}</b>{stage.title.slice(1)}</strong>
+            <small>{stage.marker}</small>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </section>
+
+  <section class="drive-diagram section-band section-band--embers" aria-labelledby={page.diagram.id}>
+    <div class="container drive-diagram__inner surface">
+      <SectionHeading
+        id={page.diagram.id}
+        eyebrow={page.diagram.eyebrow}
+        title={page.diagram.heading}
+        intro={page.diagram.description}
+      />
+      <Image src={driveDiagram} alt={page.diagram.imageAlt} />
+    </div>
+  </section>
+
+  <div id="drive-products">
+    {stages.map((stage, stageIndex) => (
+      <section
+        class:list={['section-band', 'product-stage', stageIndex % 2 === 1 ? 'section-band--warm-vignette' : 'section-band--horizon']}
+        aria-labelledby={`stage-${stage.id}`}
+      >
+        <div class="container">
+          <header class="stage-heading">
+            <div class="stage-heading__number">
+              <span>{String(stageIndex + 1).padStart(2, '0')}</span>
+              <i aria-hidden="true"></i>
+            </div>
+            <div>
+              <p class="eyebrow">{stage.marker}</p>
+              <h2 id={`stage-${stage.id}`}><span class="stage-heading__letter">{stage.title.charAt(0)}</span>{stage.title.slice(1)}</h2>
+              <p>{stage.description}</p>
+            </div>
+          </header>
+
+          {stage.practices ? (
+            <div class="validation-panel surface">
+              <div>
+                <span>{page.validationPanel.label}</span>
+                <h3>{page.validationPanel.heading}</h3>
+                <p>{page.validationPanel.description}</p>
+              </div>
+              <ul>
+                {stage.practices.map((practice) => <li>{practice}</li>)}
+              </ul>
+            </div>
+          ) : (
+            <div class:list={['offer-grid', stage.offers.length === 1 && 'offer-grid--single']}>
+              {stage.offers.map((offer) => (
+                <article class="offer-card surface">
+                  <header>
+                    <span>{offer.kind}</span>
+                    <h3>{offer.name}</h3>
+                  </header>
+
+                  <dl>
+                    <div>
+                      <dt>{page.offerLabels.problem}</dt>
+                      <dd>{offer.problem}</dd>
+                    </div>
+                    <div>
+                      <dt>{page.offerLabels.outcome}</dt>
+                      <dd>{offer.outcome}</dd>
+                    </div>
+                  </dl>
+
+                  <div class="offer-card__scope">
+                    <h4>
+                      {stage.id === 'ready'
+                        ? page.offerLabels.readyScope
+                        : offer.verification === 'billing-catalogue'
+                          ? page.offerLabels.verifiedScope
+                          : page.offerLabels.assessmentScope}
+                    </h4>
+                    <ul>
+                      {offer.scope.map((item) => <li>{item}</li>)}
+                    </ul>
+                  </div>
+
+                  <footer>
+                    <span class="offer-card__price">{offer.priceDisplay}</span>
+                    <Button href={offer.ctaHref} variant="text">{offer.ctaLabel}</Button>
+                  </footer>
+                </article>
+              ))}
+            </div>
+          )}
+
+          {stage.id === 'implement' && (
+            <aside class="bespoke-route surface">
+              <div>
+                <p class="eyebrow">{page.bespokeRoute.eyebrow}</p>
+                <h3>{page.bespokeRoute.heading}</h3>
+                <p>{page.bespokeRoute.description}</p>
+              </div>
+              <Button href={page.bespokeRoute.cta.href} variant="secondary">{page.bespokeRoute.cta.label}</Button>
+            </aside>
+          )}
+        </div>
+      </section>
+    ))}
+  </div>
+
+  <section class="section-band section-band--energy-arc catalogue-boundary" aria-labelledby={page.commercialFacts.id}>
+    <div class="container catalogue-boundary__inner surface">
+      <div>
+        <p class="eyebrow">{page.commercialFacts.eyebrow}</p>
+        <h2 id={page.commercialFacts.id}>{page.commercialFacts.heading}</h2>
+      </div>
+      <div>
+        <p>{page.commercialFacts.description}</p>
+        <Button href={page.commercialFacts.cta.href} variant="text">{page.commercialFacts.cta.label}</Button>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta-band" aria-labelledby={page.cta.id}>
+    <div class="container">
+      <div class="cta-panel surface">
+        <div>
+          <p class="eyebrow">{page.cta.eyebrow}</p>
+          <h2 id={page.cta.id}>{page.cta.heading}</h2>
+          <p>{page.cta.description}</p>
+        </div>
+        <Button href={page.cta.button.href}>{page.cta.button.label}</Button>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .drive-letter, .stage-heading__letter, .stage-card__letter { color: var(--color-brand); }
+  .drive-diagram__inner { padding: clamp(1.25rem, 4vw, 3rem); }
+  .drive-diagram__inner img { width: min(100%, 66rem); margin: var(--space-2xl) auto 0; height: auto; }
+  .products-hero { position: relative; overflow: hidden; padding-block: clamp(5rem, 11vw, 8.5rem) clamp(4rem, 9vw, 6.5rem); }
+  .products-hero::before { position: absolute; right: 6vw; top: 2rem; z-index: -1; width: min(48vw, 38rem); height: min(48vw, 38rem); border-radius: 50%; background: radial-gradient(circle at 52% 46%, rgba(255, 176, 0, 0.2), transparent 9%), radial-gradient(circle, rgba(255, 79, 0, 0.22), transparent 62%); filter: blur(28px); content: ""; }
+  .products-hero__inner { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(19rem, 28rem); gap: clamp(2rem, 7vw, 5rem); align-items: end; }
+  .products-hero__content { max-width: 64rem; }
+  .products-hero h1 { margin: 0; max-width: 13ch; font-family: var(--font-display); font-size: clamp(3rem, 8vw, 6.5rem); font-weight: 900; line-height: 0.92; }
+  .products-hero__copy { max-width: 48rem; margin: var(--space-lg) 0 0; color: var(--color-text-muted); font-size: clamp(1.05rem, 2vw, 1.25rem); }
+  .products-hero__actions { display: flex; flex-wrap: wrap; gap: var(--space-sm); margin-top: var(--space-xl); }
+
+  .drive-signal { position: relative; overflow: hidden; padding: clamp(1.25rem, 3vw, 2rem); }
+  .drive-signal > p { margin: 0; color: var(--color-text-subtle); font-size: 0.76rem; font-weight: 900; letter-spacing: 0.12em; text-transform: uppercase; }
+  .drive-signal ol, .drive-rail { margin: var(--space-lg) 0 0; padding: 0; list-style: none; }
+  .drive-signal li { display: grid; grid-template-columns: 2.3rem minmax(0, 0.65fr) minmax(0, 1fr); gap: var(--space-sm); align-items: baseline; border-top: 1px solid var(--color-border); padding-block: var(--space-md); }
+  .drive-signal span, .drive-rail span, .stage-heading__number span { color: var(--color-brand); font-size: 0.76rem; font-weight: 900; }
+  .drive-signal small, .drive-rail small { color: var(--color-text-subtle); }
+
+  .drive-rail { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--space-sm); margin-top: var(--space-2xl); }
+  .drive-rail li { position: relative; display: grid; min-height: 10rem; align-content: space-between; border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-md); background: var(--color-panel); }
+  .drive-rail li:not(:last-child)::after { position: absolute; right: calc(var(--space-sm) * -1); top: 50%; z-index: 1; display: grid; width: 1.9rem; height: 1.9rem; place-items: center; border: 1px solid rgba(255, 176, 0, 0.42); border-radius: 999px; background: var(--color-bg); box-shadow: 0 0 22px rgba(255, 79, 0, 0.34); color: var(--color-brand-amber); content: "→"; font-weight: 900; transform: translate(50%, -50%); }
+  .drive-rail strong { font-size: clamp(1.1rem, 2.2vw, 1.45rem); }
+
+  .stage-heading { display: grid; grid-template-columns: minmax(4rem, 8rem) minmax(0, 1fr); gap: clamp(1.5rem, 5vw, 4rem); max-width: 62rem; }
+  .stage-heading__number { display: flex; gap: var(--space-sm); align-items: flex-start; padding-top: 0.45rem; }
+  .stage-heading__number i { width: 100%; height: 1px; margin-top: 0.5rem; background: linear-gradient(90deg, var(--color-brand), transparent); }
+  .stage-heading h2 { margin: 0; font-size: clamp(2.8rem, 7vw, 5.8rem); line-height: 0.9; }
+  .stage-heading__letter { display: inline-block; margin-right: 0.02em; }
+  .stage-heading p:last-child { max-width: 48rem; margin: var(--space-lg) 0 0; color: var(--color-text-muted); font-size: clamp(1rem, 1.8vw, 1.18rem); }
+
+  .offer-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-md); margin-top: var(--space-xl); }
+  .offer-grid--single { grid-template-columns: minmax(0, 54rem); }
+  .offer-card { display: grid; grid-template-rows: auto auto 1fr auto; min-height: 36rem; overflow: hidden; padding: clamp(1.25rem, 3vw, 2rem); }
+  .offer-card::before { width: 2.6rem; height: 0.18rem; margin-bottom: var(--space-lg); border-radius: 999px; background: var(--color-brand); box-shadow: 0 0 18px rgba(255, 79, 0, 0.36); content: ""; }
+  .offer-card header > span, .validation-panel span { color: var(--color-brand-amber); font-size: 0.75rem; font-weight: 900; letter-spacing: 0.1em; text-transform: uppercase; }
+  .offer-card h3 { margin: var(--space-sm) 0 0; font-size: clamp(1.7rem, 3vw, 2.65rem); line-height: 1; }
+  .offer-card dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-lg); margin: var(--space-xl) 0 0; }
+  .offer-card dt, .offer-card h4 { color: var(--color-text); font-size: 0.76rem; font-weight: 900; letter-spacing: 0.08em; text-transform: uppercase; }
+  .offer-card dd { margin: var(--space-xs) 0 0; color: var(--color-text-muted); }
+  .offer-card__scope { margin-top: var(--space-xl); border-top: 1px solid var(--color-border); padding-top: var(--space-lg); }
+  .offer-card__scope h4 { margin: 0; }
+  .offer-card__scope ul, .validation-panel ul { display: grid; gap: var(--space-xs); margin: var(--space-md) 0 0; padding: 0; list-style: none; }
+  .offer-card__scope li, .validation-panel li { position: relative; padding-left: 1rem; color: var(--color-text-muted); }
+  .offer-card__scope li::before, .validation-panel li::before { position: absolute; left: 0; top: 0.65em; width: 0.34rem; height: 0.34rem; border-radius: 50%; background: var(--color-brand); content: ""; }
+  .offer-card footer { display: flex; gap: var(--space-md); align-items: center; justify-content: space-between; margin-top: var(--space-lg); border-top: 1px solid var(--color-border); padding-top: var(--space-md); }
+  .offer-card__price { font-weight: 900; }
+  .offer-card footer .button { flex: 0 0 auto; border-color: rgba(255, 176, 0, 0.34); border-radius: var(--radius-md); padding: 0.72rem 0.92rem; background: rgba(255, 79, 0, 0.08); color: var(--color-brand-amber); box-shadow: 0 0 18px rgba(255, 79, 0, 0.12); }
+  .offer-card footer .button:hover, .offer-card footer .button:focus-visible { border-color: var(--color-brand); background: rgba(255, 79, 0, 0.16); color: var(--color-text); }
+
+  .validation-panel, .bespoke-route { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(2rem, 6vw, 4rem); margin-top: var(--space-xl); padding: clamp(1.5rem, 4vw, 3rem); }
+  .validation-panel h3, .bespoke-route h3 { margin: var(--space-sm) 0 0; font-size: clamp(1.8rem, 4vw, 3rem); line-height: 1; }
+  .validation-panel p, .bespoke-route p:last-child { margin: var(--space-md) 0 0; color: var(--color-text-muted); }
+  .validation-panel ul { margin: 0; border-left: 1px solid var(--color-border-strong); padding-left: clamp(1.5rem, 4vw, 3rem); }
+  .validation-panel li { padding-block: var(--space-sm); padding-left: 1.2rem; border-bottom: 1px solid var(--color-border); }
+  .bespoke-route { align-items: center; }
+  .bespoke-route .button { justify-self: end; }
+
+  .catalogue-boundary__inner { display: grid; grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr); gap: clamp(2rem, 6vw, 4rem); padding: clamp(1.5rem, 4vw, 3rem); }
+  .catalogue-boundary h2 { margin: 0; font-size: clamp(2.2rem, 5vw, 4.3rem); line-height: 0.96; }
+  .catalogue-boundary__inner > div:last-child { border-left: 1px solid var(--color-border-strong); padding-left: clamp(1.5rem, 4vw, 3rem); }
+  .catalogue-boundary__inner > div:last-child p { margin: 0; color: var(--color-text-muted); font-size: clamp(1rem, 1.8vw, 1.18rem); }
+
+  @media (max-width: 960px) {
+    .products-hero__inner, .validation-panel, .bespoke-route, .catalogue-boundary__inner { grid-template-columns: 1fr; }
+    .drive-rail { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .validation-panel ul, .catalogue-boundary__inner > div:last-child { border-top: 1px solid var(--color-border-strong); border-left: 0; padding-top: var(--space-lg); padding-left: 0; }
+    .bespoke-route .button { justify-self: start; }
+  }
+
+  @media (max-width: 720px) {
+    .drive-rail, .offer-grid, .offer-grid--single { grid-template-columns: 1fr; }
+    .drive-rail li { min-height: 7rem; }
+    .drive-rail li:not(:last-child)::after { right: 50%; top: auto; bottom: calc(var(--space-sm) * -1); transform: translate(50%, 50%) rotate(90deg); }
+    .offer-card { min-height: auto; }
+  }
+
+  @media (max-width: 560px) {
+    .products-hero { padding-block-start: 3.5rem; }
+    .products-hero h1 { font-size: clamp(2.7rem, 14vw, 4.4rem); }
+    .drive-signal li, .stage-heading { grid-template-columns: 1fr; }
+    .stage-heading__number { width: 5rem; }
+    .offer-card dl { grid-template-columns: 1fr; }
+    .offer-card footer { align-items: flex-start; flex-direction: column; }
+    .offer-card footer .button { width: 100%; }
+  }
+</style>

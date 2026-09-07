@@ -1,0 +1,389 @@
+---
+import Button from '../components/Button.astro';
+import SectionHeading from '../components/SectionHeading.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { Image } from 'astro:assets';
+import { loadPageData } from '../data/pages';
+import whatsNotWorkingImage from '../images/whats-not-working.jpg';
+
+const page = await loadPageData('about');
+---
+
+<BaseLayout
+  title={page.title}
+  description={page.description}
+>
+  <section class="about-hero">
+    <div class="about-hero__inner container">
+      <div class="about-hero__content">
+        <p class="eyebrow">{page.hero.eyebrow}</p>
+        <h1>{page.hero.heading}</h1>
+        <p class="about-hero__copy">
+          {page.hero.description}
+        </p>
+      </div>
+
+      <div class="about-hero__signal surface">
+        <Image
+          src={whatsNotWorkingImage}
+          alt={page.hero.imageAlt}
+        />
+      </div>
+    </div>
+  </section>
+
+  <section class="section-band" aria-labelledby={page.why.id}>
+    <div class="container reason-layout">
+      <SectionHeading
+        id={page.why.id}
+        eyebrow={page.why.eyebrow}
+        title={page.why.heading}
+      />
+
+      <div class="reason-copy">
+        {page.why.paragraphs.map((paragraph) => <p>{paragraph}</p>)}
+        <p class="reason-copy__line">{page.why.line}</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section-band section-band--dark" aria-labelledby={page.operatingModel.id}>
+    <div class="container">
+      <SectionHeading
+        id={page.operatingModel.id}
+        eyebrow={page.operatingModel.eyebrow}
+        title={page.operatingModel.heading}
+        intro={page.operatingModel.description}
+      />
+
+      <div class="model-split">
+        {page.operatingModel.sides.map((side, index) => (
+          <article class="model-card surface">
+            <span class="model-card__number">
+              {String(index + 1).padStart(2, '0')}
+            </span>
+            <h3>{side.name}</h3>
+            <p class="model-card__line">{side.line}</p>
+            <p class="model-card__label">{page.operatingModel.focusLabel}</p>
+            <ul>
+              {side.focus.map((item) => <li>{item}</li>)}
+            </ul>
+          </article>
+        ))}
+      </div>
+
+    </div>
+  </section>
+
+  <section class="section-band" aria-labelledby={page.principles.id}>
+    <div class="container principles-layout">
+      <SectionHeading
+        id={page.principles.id}
+        eyebrow={page.principles.eyebrow}
+        title={page.principles.heading}
+        intro={page.principles.description}
+      />
+
+      <ol class="principle-list">
+        {page.principles.items.map((principle, index) => (
+          <li>
+            <span>{String(index + 1).padStart(2, '0')}</span>
+            {principle}
+          </li>
+        ))}
+      </ol>
+    </div>
+  </section>
+
+  <section class="section-band section-band--dark" aria-labelledby={page.local.id}>
+    <div class="container nz-panel surface">
+      <div>
+        <p class="eyebrow">{page.local.eyebrow}</p>
+        <h2 id={page.local.id}>{page.local.heading}</h2>
+      </div>
+      <p>{page.local.description}</p>
+    </div>
+  </section>
+
+  <section class="cta-band" aria-labelledby={page.cta.id}>
+    <div class="container">
+      <div class="cta-panel surface">
+        <div>
+          <p class="eyebrow">{page.cta.eyebrow}</p>
+          <h2 id={page.cta.id}>{page.cta.heading}</h2>
+          <p>{page.cta.description}</p>
+        </div>
+        <Button href={page.cta.button.href}>{page.cta.button.label}</Button>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .about-hero {
+    position: relative;
+    overflow: hidden;
+    padding-block: clamp(5rem, 11vw, 8.5rem) clamp(4rem, 9vw, 6.5rem);
+  }
+
+  .about-hero::before {
+    position: absolute;
+    right: 7vw;
+    top: 3rem;
+    z-index: -1;
+    width: min(44vw, 34rem);
+    height: min(44vw, 34rem);
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 79, 0, 0.2), transparent 64%);
+    filter: blur(26px);
+    content: "";
+  }
+
+  .about-hero__inner {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(18rem, 26rem);
+    gap: clamp(2rem, 7vw, 5rem);
+    align-items: center;
+  }
+
+  .about-hero__content {
+    max-width: 65rem;
+  }
+
+  .about-hero h1 {
+    margin: 0;
+    max-width: 16ch;
+    font-family: var(--font-display);
+    font-size: clamp(3rem, 7.5vw, 6.2rem);
+    font-weight: 900;
+    line-height: 0.92;
+    letter-spacing: 0;
+  }
+
+  .about-hero__copy {
+    max-width: 46rem;
+    margin: var(--space-lg) 0 0;
+    color: var(--color-text-muted);
+    font-size: clamp(1.05rem, 2vw, 1.25rem);
+  }
+
+  .about-hero__signal {
+    position: relative;
+    min-height: 27rem;
+    overflow: hidden;
+    background: var(--color-panel-hot);
+  }
+
+  .about-hero__signal::after {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(5, 5, 5, 0.2), transparent 58%);
+    pointer-events: none;
+    content: "";
+  }
+
+  .about-hero__signal img {
+    width: 100%;
+    height: 100%;
+    min-height: inherit;
+    object-fit: contain;
+    object-position: center;
+  }
+
+  .reason-layout,
+  .principles-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+    gap: clamp(2.5rem, 7vw, 5rem);
+    align-items: start;
+  }
+
+  .reason-copy {
+    border-left: 1px solid var(--color-border-strong);
+    padding-left: clamp(1rem, 3vw, 2rem);
+  }
+
+  .reason-copy p {
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: clamp(1.05rem, 2vw, 1.22rem);
+  }
+
+  .reason-copy__line {
+    margin-top: var(--space-xl) !important;
+    color: var(--color-text) !important;
+    font-size: clamp(1.4rem, 3vw, 2.2rem) !important;
+    font-weight: 900;
+    line-height: 1.1;
+  }
+
+  .model-split {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-md);
+    margin-top: var(--space-2xl);
+  }
+
+  .model-card {
+    min-height: 30rem;
+    padding: clamp(1.5rem, 4vw, 2.5rem);
+  }
+
+  .model-card::before {
+    display: block;
+    width: 2.4rem;
+    height: 0.18rem;
+    margin-bottom: var(--space-lg);
+    border-radius: 999px;
+    background: var(--color-brand);
+    box-shadow: 0 0 18px rgba(255, 79, 0, 0.36);
+    content: "";
+  }
+
+  .model-card__number {
+    color: var(--color-brand);
+    font-size: 0.78rem;
+    font-weight: 900;
+  }
+
+  .model-card h3 {
+    margin: var(--space-md) 0 0;
+    font-size: clamp(2rem, 5vw, 4rem);
+    line-height: 0.96;
+  }
+
+  .model-card__line {
+    margin: var(--space-md) 0 0;
+    color: var(--color-brand-amber);
+    font-weight: 900;
+  }
+
+  .model-card__label {
+    margin: var(--space-xl) 0 0;
+    border-top: 1px solid var(--color-border);
+    padding-top: var(--space-lg);
+    color: var(--color-text-subtle);
+    font-size: 0.76rem;
+    font-weight: 900;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .model-card ul {
+    display: grid;
+    gap: var(--space-xs);
+    margin: var(--space-md) 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .model-card li {
+    position: relative;
+    padding-left: 1rem;
+    color: var(--color-text-muted);
+  }
+
+  .model-card li::before {
+    position: absolute;
+    left: 0;
+    top: 0.68em;
+    width: 0.34rem;
+    height: 0.34rem;
+    border-radius: 50%;
+    background: var(--color-brand);
+    content: "";
+  }
+
+
+  .principle-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .principle-list li {
+    display: grid;
+    grid-template-columns: 3rem minmax(0, 1fr);
+    gap: var(--space-md);
+    border-top: 1px solid var(--color-border);
+    padding-block: var(--space-lg);
+    font-size: clamp(1.05rem, 2vw, 1.28rem);
+    font-weight: 800;
+  }
+
+  .principle-list li:last-child {
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .principle-list span {
+    color: var(--color-brand);
+    font-size: 0.78rem;
+  }
+
+  .nz-panel {
+    display: grid;
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+    gap: clamp(2rem, 6vw, 4rem);
+    align-items: center;
+    overflow: hidden;
+    padding: clamp(1.5rem, 4vw, 3rem);
+    background:
+      radial-gradient(circle at 86% 20%, rgba(255, 79, 0, 0.16), transparent 22rem),
+      linear-gradient(145deg, rgba(255, 79, 0, 0.08), transparent 40%),
+      var(--color-panel);
+  }
+
+  .nz-panel h2 {
+    margin: 0;
+    font-size: clamp(2.2rem, 5vw, 4.4rem);
+    line-height: 0.96;
+  }
+
+  .nz-panel > p {
+    margin: 0;
+    border-left: 1px solid var(--color-border-strong);
+    padding-left: clamp(1rem, 3vw, 2rem);
+    color: var(--color-text-muted);
+    font-size: clamp(1.05rem, 2vw, 1.22rem);
+  }
+
+  @media (max-width: 900px) {
+    .about-hero__inner,
+    .reason-layout,
+    .principles-layout,
+    .nz-panel {
+      grid-template-columns: 1fr;
+    }
+
+    .nz-panel > p {
+      border-top: 1px solid var(--color-border-strong);
+      border-left: 0;
+      padding-top: var(--space-lg);
+      padding-left: 0;
+    }
+  }
+
+  @media (max-width: 720px) {
+    .model-split {
+      grid-template-columns: 1fr;
+    }
+
+    .model-card {
+      min-height: auto;
+    }
+  }
+
+  @media (max-width: 560px) {
+    .about-hero {
+      padding-block-start: 3.5rem;
+    }
+
+    .about-hero h1 {
+      font-size: clamp(2.7rem, 13vw, 4.2rem);
+    }
+
+    .about-hero__signal {
+      min-height: 20rem;
+    }
+  }
+</style>

@@ -1,0 +1,78 @@
+---
+title: "Contact"
+description: "Start a problem-led conversation with MaximisedAI about software, automation, AI or digital infrastructure."
+hero:
+  eyebrow: "CONTACT"
+  heading: "Tell us what's not working."
+  description: "You do not need to know whether the answer is AI, automation, software or infrastructure. Start with the problem."
+  imageAlt: "Abstract orange and red orb representing a problem becoming a useful next step"
+context:
+  id: "useful-message"
+  eyebrow: "Problem Context"
+  heading: "A useful first message"
+  description: "You do not need to write a specification. A little operating context helps us understand the problem and decide what conversation should happen next."
+  items:
+    - "what the business is trying to achieve"
+    - "what is currently difficult or manual"
+    - "who is affected"
+    - "systems/tools involved"
+    - "urgency or timing"
+form:
+  eyebrow: "Business Intake"
+  heading: "What Problem are you trying to Solve"
+  description: "This is a problem-led business intake, not a newsletter signup. Share enough context for us to understand what is happening and who it affects."
+  fields:
+    name: "Name"
+    email: "Email"
+    phone: "Phone"
+    phoneOptional: "(optional)"
+    organisation: "Organisation"
+    problem: "What are you trying to solve?"
+    category: "Category"
+    categoryPlaceholder: "Select a category"
+    timing: "Timing"
+    timingPlaceholder: "Select timing"
+    website: "Website"
+  submitLabel: "Send problem"
+  submitSendingLabel: "Sending…"
+  privacyNote: "We only use the information you provide to respond to your enquiry and manage the resulting business conversation."
+  service:
+    submitLabel: "Get free assessment"
+    problemPlaceholder: "Tell us about the organisation and any trust, search or visibility concerns you have noticed."
+    heading: "Request your free Trust Signal Assessment"
+    status: "This enquiry will be identified as a Trust Signal Assessment request."
+  status:
+    unavailable: "This form is temporarily unavailable. Please try again later."
+    problemTooShort: "Please add a little more detail about the problem."
+    problemTooLong: "Please shorten the problem or phone details so the complete message is 2,000 characters or fewer."
+    reviewProblem: "Please review the problem details before sending."
+    sending: "Sending your enquiry…"
+    success: "Thanks. Your enquiry has been received."
+    error: "We couldn't send your enquiry. Please try again."
+  categories:
+    - "AI & Workflow Automation"
+    - "AI Assistant / Agent"
+    - "Bespoke Software"
+    - "Website / Digital System"
+    - "Managed Technology"
+    - "Not sure yet"
+  timingOptions:
+    - "As soon as practical"
+    - "Within 1–3 months"
+    - "Later this year"
+    - "Exploring only"
+mgrnz:
+  id: "mgrnz-start"
+  eyebrow: "A Different Starting Point"
+  heading: "Not ready to start a project?"
+  description: "If the problem still needs framing, MGRNZ may be the better starting point."
+  cta:
+    label: "Visit MGRNZ"
+    href: "https://mgrnz.com/"
+  focusLabel: "MGRNZ focuses on"
+  focus:
+    - "assessment"
+    - "strategy"
+    - "advisory"
+    - "education"
+---
