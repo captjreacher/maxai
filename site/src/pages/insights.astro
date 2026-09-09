@@ -1,0 +1,16 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { loadPageData } from '../data/pages';
+
+const page = await loadPageData('insights');
+---
+
+<BaseLayout title={page.title} description={page.description}>
+  <section class="page-hero">
+    <div class="container">
+      <p class="eyebrow">{page.hero.eyebrow}</p>
+      <h1>{page.hero.heading}</h1>
+      <p class="page-hero__copy">{page.hero.description}</p>
+    </div>
+  </section>
+</BaseLayout>

@@ -1,0 +1,690 @@
+---
+import Button from '../components/Button.astro';
+import SectionHeading from '../components/SectionHeading.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import {
+  commercialCatalogueGroups,
+  getDriveProductExperience,
+} from '../data/product-catalogue.js';
+import { loadPageData } from '../data/pages';
+import { loadBillingCatalogueSnapshot } from '../server/billing-catalogue.js';
+
+const page = await loadPageData('pricing');
+const productsPage = await loadPageData('products');
+const pricingPaths = page.paths.items;
+const billingCatalogue = await loadBillingCatalogueSnapshot({
+  env: {
+    MAXAI_BILLING_CATALOGUE_API_BASE_URL:
+      import.meta.env.MAXAI_BILLING_CATALOGUE_API_BASE_URL,
+    MAXAI_BILLING_CATALOGUE_BEARER_TOKEN:
+      import.meta.env.MAXAI_BILLING_CATALOGUE_BEARER_TOKEN,
+    MAXAI_BILLING_CATALOGUE_REQUIRED:
+      import.meta.env.MAXAI_BILLING_CATALOGUE_REQUIRED,
+  },
+});
+const commercialProducts = getDriveProductExperience(
+  billingCatalogue,
+  productsPage.productStages,
+).flatMap((stage) =>
+  (stage.offers ?? [])
+    .filter((offer) => offer.verification === 'billing-catalogue' && offer.productId)
+    .map((offer) => ({
+      ...offer,
+      stageTitle: stage.title,
+      stageMarker: stage.marker,
+    })),
+);
+
+function getPricingDisplay(offer) {
+  const commercialState = offer.commercialState;
+  const isPoa = commercialState?.billingCadence === 'poa';
+  const isQuoteFallback = offer.priceDisplay === offer.ctaLabel;
+
+  if (
+    commercialState &&
+    (commercialState.lifecycleStatus !== 'published' || !commercialState.isSellable)
+  ) {
+    return {
+      value: 'Currently unavailable',
+      ctaLabel: null,
+      ctaHref: null,
+    };
+  }
+
+  return {
+    value: offer.priceDisplay,
+    ctaLabel: offer.ctaLabel,
+    ctaHref: offer.ctaHref,
+    actionOnly: isPoa || isQuoteFallback,
+  };
+}
+
+const groupedCommercialProducts = commercialCatalogueGroups
+  .map((group) => ({
+    ...group,
+    offers: commercialProducts
+      .filter((offer) => offer.catalogueGroup === group.id)
+      .map((offer) => ({
+        ...offer,
+        pricingDisplay: getPricingDisplay(offer),
+      })),
+  }))
+  .filter((group) => group.offers.length > 0);
+---
+
+<BaseLayout
+  title={page.title}
+  description={page.description}
+>
+  <section class="pricing-hero section-band--fire-glow">
+    <div class="pricing-hero__inner container">
+      <div class="pricing-hero__content">
+        <p class="eyebrow">{page.hero.eyebrow}</p>
+        <h1>{page.hero.heading}</h1>
+        <p class="pricing-hero__copy">
+          {page.hero.description}
+        </p>
+      </div>
+
+      <aside class="pricing-hero__signal surface" aria-label="Commercial pathways">
+        <p>{page.hero.signalLabel}</p>
+        <ol>
+          {pricingPaths.map((path, index) => (
+            <li>
+              <span>{String(index + 1).padStart(2, '0')}</span>
+              {path.title}
+            </li>
+          ))}
+        </ol>
+      </aside>
+    </div>
+  </section>
+
+  <section class="section-band section-band--embers" aria-labelledby={page.paths.id}>
+    <div class="container">
+      <SectionHeading
+        id={page.paths.id}
+        eyebrow={page.paths.eyebrow}
+        title={page.paths.heading}
+        intro={page.paths.description}
+      />
+
+      <div class="pricing-grid">
+        {pricingPaths.map((path, index) => (
+          <article class="pricing-card surface">
+            <header>
+              <span>{String(index + 1).padStart(2, '0')}</span>
+              <h3>{path.title}</h3>
+            </header>
+
+            <div class="pricing-card__fit">
+              <h4>{page.paths.fitLabel}</h4>
+              <ul>
+                {path.suitableFor.map((item) => <li>{item}</li>)}
+              </ul>
+            </div>
+
+            <p class="pricing-card__model">
+              <strong>{page.paths.modelLabel}</strong>
+              {path.commercialModel}
+            </p>
+          </article>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="section-band section-band--horizon" aria-labelledby={page.quoteExamples.id}>
+    <div class="container quote-layout">
+      <SectionHeading
+        id={page.quoteExamples.id}
+        eyebrow={page.quoteExamples.eyebrow}
+        title={page.quoteExamples.heading}
+        intro={page.quoteExamples.description}
+      />
+
+      <ul class="quote-list">
+        {page.quoteExamples.items.map((example, index) => (
+          <li>
+            <span>{String(index + 1).padStart(2, '0')}</span>
+            {example}
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <section class="section-band section-band--embers" aria-labelledby={page.catalogue.id}>
+    <div class="container">
+      <SectionHeading
+        id={page.catalogue.id}
+        eyebrow={page.catalogue.eyebrow}
+        title={page.catalogue.heading}
+        intro={page.catalogue.description}
+      />
+
+      <div class="catalogue-groups">
+        {groupedCommercialProducts.map((group) => (
+          <section class="catalogue-group" aria-labelledby={`${group.id}-heading`}>
+            <div class="catalogue-group__heading">
+              <p class="eyebrow">{group.eyebrow}</p>
+              <h3 id={`${group.id}-heading`}>{group.heading}</h3>
+              <p>{group.description}</p>
+            </div>
+
+            <div
+              class:list={[
+                'catalogue-offer-grid',
+                group.offers.length === 5 && 'catalogue-offer-grid--balanced',
+              ]}
+            >
+              {group.offers.map((offer) => (
+                <article class="catalogue-offer-card surface">
+                  <header>
+                    <span>{offer.kind}</span>
+                    <h4>{offer.name}</h4>
+                    <p>{offer.outcome}</p>
+                  </header>
+
+                  <div class="catalogue-offer-card__meta">
+                    <span>{offer.stageTitle}</span>
+                    <p>{offer.stageMarker}</p>
+                  </div>
+
+                  <footer>
+                    {!offer.pricingDisplay.actionOnly && (
+                      <strong>{offer.pricingDisplay.value}</strong>
+                    )}
+                    {offer.pricingDisplay.ctaHref && offer.pricingDisplay.ctaLabel && (
+                      <Button
+                        href={offer.pricingDisplay.ctaHref}
+                        variant="text"
+                        class="catalogue-offer-card__action"
+                      >
+                        {offer.pricingDisplay.ctaLabel}
+                        <span aria-hidden="true">→</span>
+                      </Button>
+                    )}
+                  </footer>
+                </article>
+              ))}
+            </div>
+          </section>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="section-band section-band--quiet" aria-labelledby={page.priceFactors.id}>
+    <div class="container">
+      <SectionHeading
+        id={page.priceFactors.id}
+        eyebrow={page.priceFactors.eyebrow}
+        title={page.priceFactors.heading}
+        intro={page.priceFactors.description}
+      />
+
+      <ul class="factor-grid">
+        {page.priceFactors.items.map((factor, index) => (
+          <li class="surface">
+            <span>{String(index + 1).padStart(2, '0')}</span>
+            {factor}
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <section class="section-band section-band--warm-vignette boundary-band" aria-labelledby={page.boundary.id}>
+    <div class="container boundary-panel surface">
+      <div>
+        <p class="eyebrow">{page.boundary.eyebrow}</p>
+        <h2 id={page.boundary.id}>{page.boundary.heading}</h2>
+      </div>
+      <p>{page.boundary.description}</p>
+    </div>
+  </section>
+
+  <section class="cta-band" aria-labelledby={page.cta.id}>
+    <div class="container">
+      <div class="cta-panel surface">
+        <div>
+          <p class="eyebrow">{page.cta.eyebrow}</p>
+          <h2 id={page.cta.id}>{page.cta.heading}</h2>
+          <p>{page.cta.description}</p>
+        </div>
+        <Button href={page.cta.button.href}>{page.cta.button.label}</Button>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .pricing-hero {
+    position: relative;
+    overflow: hidden;
+    padding-block: clamp(5rem, 11vw, 8.5rem) clamp(4rem, 9vw, 6.5rem);
+  }
+
+  .pricing-hero::before {
+    position: absolute;
+    right: 7vw;
+    top: 3rem;
+    z-index: -1;
+    width: min(44vw, 34rem);
+    height: min(44vw, 34rem);
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 79, 0, 0.2), transparent 64%);
+    filter: blur(26px);
+    content: "";
+  }
+
+  .pricing-hero__inner {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(19rem, 27rem);
+    gap: clamp(2rem, 7vw, 5rem);
+    align-items: end;
+  }
+
+  .pricing-hero__content {
+    max-width: 63rem;
+  }
+
+  .pricing-hero h1 {
+    margin: 0;
+    max-width: 15ch;
+    font-family: var(--font-display);
+    font-size: clamp(3rem, 8vw, 6.5rem);
+    font-weight: 900;
+    line-height: 0.92;
+    letter-spacing: 0;
+  }
+
+  .pricing-hero__copy {
+    max-width: 47rem;
+    margin: var(--space-lg) 0 0;
+    color: var(--color-text-muted);
+    font-size: clamp(1.05rem, 2vw, 1.25rem);
+  }
+
+  .pricing-hero__signal {
+    position: relative;
+    overflow: hidden;
+    padding: clamp(1.25rem, 3vw, 2rem);
+  }
+
+  .pricing-hero__signal::before {
+    position: absolute;
+    right: -5rem;
+    bottom: -6rem;
+    width: 14rem;
+    height: 14rem;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 79, 0, 0.2), transparent 66%);
+    content: "";
+  }
+
+  .pricing-hero__signal > p {
+    margin: 0;
+    color: var(--color-text-subtle);
+    font-size: 0.76rem;
+    font-weight: 900;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .pricing-hero__signal ol {
+    display: grid;
+    gap: var(--space-sm);
+    margin: var(--space-lg) 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .pricing-hero__signal li {
+    display: grid;
+    grid-template-columns: 2.2rem minmax(0, 1fr);
+    gap: var(--space-sm);
+    border-top: 1px solid var(--color-border);
+    padding-top: var(--space-md);
+    font-weight: 800;
+  }
+
+  .pricing-hero__signal li span {
+    color: var(--color-brand);
+    font-size: 0.76rem;
+  }
+
+  .pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-md);
+    margin-top: var(--space-2xl);
+  }
+
+  .pricing-card {
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    min-height: 32rem;
+    overflow: hidden;
+    padding: clamp(1.25rem, 3vw, 2rem);
+  }
+
+  .pricing-card::before {
+    display: block;
+    width: 2.4rem;
+    height: 0.18rem;
+    margin-bottom: var(--space-lg);
+    border-radius: 999px;
+    background: var(--color-brand);
+    box-shadow: 0 0 18px rgba(255, 79, 0, 0.36);
+    content: "";
+  }
+
+  .pricing-card header span {
+    color: var(--color-brand);
+    font-size: 0.78rem;
+    font-weight: 900;
+  }
+
+  .pricing-card h3 {
+    margin: var(--space-md) 0 0;
+    max-width: 18ch;
+    font-size: clamp(1.65rem, 3vw, 2.5rem);
+    line-height: 1;
+  }
+
+  .pricing-card__fit {
+    margin-top: var(--space-xl);
+  }
+
+  .pricing-card h4 {
+    margin: 0;
+    color: var(--color-brand-amber);
+    font-size: 0.76rem;
+    font-weight: 900;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .pricing-card ul {
+    display: grid;
+    gap: var(--space-xs);
+    margin: var(--space-md) 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .pricing-card li {
+    position: relative;
+    padding-left: 1rem;
+    color: var(--color-text-muted);
+  }
+
+  .pricing-card li::before {
+    position: absolute;
+    left: 0;
+    top: 0.68em;
+    width: 0.34rem;
+    height: 0.34rem;
+    border-radius: 50%;
+    background: var(--color-brand);
+    content: "";
+  }
+
+  .pricing-card__model {
+    display: grid;
+    gap: var(--space-xs);
+    margin: var(--space-xl) 0 0;
+    border-top: 1px solid var(--color-border);
+    padding-top: var(--space-lg);
+    color: var(--color-text-muted);
+  }
+
+  .pricing-card__model strong {
+    color: var(--color-text);
+  }
+
+  .quote-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+    gap: clamp(2.5rem, 7vw, 5rem);
+    align-items: start;
+  }
+
+  .quote-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .quote-list li {
+    display: grid;
+    grid-template-columns: 3rem minmax(0, 1fr);
+    gap: var(--space-md);
+    border-top: 1px solid var(--color-border);
+    padding-block: var(--space-lg);
+    font-size: clamp(1rem, 2vw, 1.22rem);
+    font-weight: 800;
+  }
+
+  .quote-list li:last-child {
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .quote-list span,
+  .factor-grid span {
+    color: var(--color-brand);
+    font-size: 0.78rem;
+    font-weight: 900;
+  }
+
+  .catalogue-groups {
+    display: grid;
+    gap: clamp(2.25rem, 5vw, 3.5rem);
+    margin-top: var(--space-2xl);
+  }
+
+  .catalogue-group {
+    display: grid;
+    gap: var(--space-md);
+  }
+
+  .catalogue-group__heading {
+    max-width: 48rem;
+  }
+
+  .catalogue-group__heading h3 {
+    margin: 0;
+    font-size: clamp(2rem, 4vw, 3.25rem);
+    line-height: 0.98;
+  }
+
+  .catalogue-group__heading > p:not(.eyebrow) {
+    margin: var(--space-sm) 0 0;
+    color: var(--color-text-muted);
+    font-size: clamp(1rem, 1.8vw, 1.16rem);
+  }
+
+  .catalogue-offer-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-md);
+  }
+
+  .catalogue-offer-card {
+    display: grid;
+    grid-template-rows: auto auto auto;
+    min-height: 15.5rem;
+    padding: clamp(1rem, 2.2vw, 1.35rem);
+  }
+
+  .catalogue-offer-card header > span,
+  .catalogue-offer-card__meta > span {
+    color: var(--color-brand-amber);
+    font-size: 0.76rem;
+    font-weight: 900;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .catalogue-offer-card h4 {
+    margin: 0.45rem 0 0;
+    font-size: clamp(1.18rem, 2vw, 1.55rem);
+    line-height: 1.04;
+  }
+
+  .catalogue-offer-card header p,
+  .catalogue-offer-card__meta p {
+    margin: var(--space-sm) 0 0;
+    color: var(--color-text-muted);
+  }
+
+  .catalogue-offer-card header p {
+    line-height: 1.55;
+  }
+
+  .catalogue-offer-card__meta {
+    margin-top: var(--space-lg);
+    padding-top: var(--space-xs);
+  }
+
+  .catalogue-offer-card footer {
+    display: grid;
+    gap: 0.45rem;
+    margin-top: var(--space-sm);
+    border-top: 1px solid var(--color-border);
+    padding-top: var(--space-sm);
+  }
+
+  .catalogue-offer-card footer strong {
+    color: var(--color-text);
+    font-size: clamp(1.08rem, 1.8vw, 1.32rem);
+    line-height: 1.1;
+  }
+
+  .catalogue-offer-card .catalogue-offer-card__action {
+    display: inline-flex;
+    gap: 0.35rem;
+    justify-self: start;
+    margin-top: 0;
+    color: var(--color-brand-amber);
+  }
+
+  .catalogue-offer-card .catalogue-offer-card__action span {
+    transition: transform 160ms ease;
+  }
+
+  .catalogue-offer-card .catalogue-offer-card__action:hover span,
+  .catalogue-offer-card .catalogue-offer-card__action:focus-visible span {
+    transform: translateX(0.18rem);
+  }
+
+  .catalogue-offer-card .catalogue-offer-card__action:focus-visible {
+    border-radius: var(--radius-sm);
+    outline: 2px solid rgba(255, 179, 71, 0.42);
+    outline-offset: 0.25rem;
+  }
+
+  .factor-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-md);
+    margin: var(--space-2xl) 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .factor-grid li {
+    display: grid;
+    min-height: 11rem;
+    align-content: space-between;
+    padding: var(--space-lg);
+    font-size: clamp(1rem, 2vw, 1.2rem);
+    font-weight: 800;
+  }
+
+  .factor-grid li:last-child {
+    grid-column: 2;
+  }
+
+  .boundary-panel {
+    display: grid;
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    gap: clamp(2rem, 6vw, 4rem);
+    align-items: center;
+    overflow: hidden;
+    padding: clamp(1.5rem, 4vw, 3rem);
+    background:
+      radial-gradient(circle at 86% 20%, rgba(255, 79, 0, 0.16), transparent 22rem),
+      linear-gradient(145deg, rgba(255, 79, 0, 0.08), transparent 40%),
+      var(--color-panel);
+  }
+
+  .boundary-panel h2 {
+    margin: 0;
+    font-size: clamp(2.2rem, 5vw, 4.4rem);
+    line-height: 0.96;
+  }
+
+  .boundary-panel > p {
+    margin: 0;
+    border-left: 1px solid var(--color-border-strong);
+    padding-left: clamp(1rem, 3vw, 2rem);
+    color: var(--color-text-muted);
+    font-size: clamp(1.05rem, 2vw, 1.25rem);
+  }
+
+  @media (max-width: 900px) {
+    .pricing-hero__inner,
+    .quote-layout,
+    .boundary-panel {
+      grid-template-columns: 1fr;
+    }
+
+    .factor-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .catalogue-offer-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .factor-grid li:last-child {
+      grid-column: auto;
+    }
+
+    .boundary-panel > p {
+      border-top: 1px solid var(--color-border-strong);
+      border-left: 0;
+      padding-top: var(--space-lg);
+      padding-left: 0;
+    }
+  }
+
+  @media (max-width: 720px) {
+    .pricing-grid,
+    .catalogue-offer-grid,
+    .factor-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .pricing-card {
+      min-height: auto;
+    }
+
+    .factor-grid li {
+      min-height: 8rem;
+    }
+  }
+
+  @media (max-width: 560px) {
+    .pricing-hero {
+      padding-block-start: 3.5rem;
+    }
+
+    .pricing-hero h1 {
+      font-size: clamp(2.7rem, 14vw, 4.4rem);
+    }
+  }
+</style>

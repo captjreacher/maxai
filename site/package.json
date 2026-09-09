@@ -1,0 +1,30 @@
+{
+  "name": "site",
+  "type": "module",
+  "version": "0.0.1",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "build:catalogue-fixture": "node scripts/build-with-catalogue-fixture.mjs",
+    "deploy": "wrangler deploy --config wrangler.jsonc",
+    "test": "node --test tests/*.test.js",
+    "verify:dist": "node scripts/verify-dist-secrets.mjs",
+    "preview": "astro preview",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "astro": "^7.2.9"
+  },
+  "devDependencies": {
+    "wrangler": "4.130.0"
+  },
+  "overrides": {
+    "sharp": "0.35.4"
+  },
+  "allowScripts": {
+    "esbuild": true
+  }
+}

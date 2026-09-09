@@ -1,0 +1,435 @@
+---
+import Button from '../components/Button.astro';
+import SectionHeading from '../components/SectionHeading.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { Image } from 'astro:assets';
+import { loadPageData } from '../data/pages';
+import evolveDiagram from '../images/evolve.png';
+
+const page = await loadPageData('how-we-work');
+---
+
+<BaseLayout
+  title={page.title}
+  description={page.description}
+>
+  <section class="work-hero section-band--fire-glow">
+    <div class="work-hero__inner container">
+      <div class="work-hero__content">
+        <p class="eyebrow">{page.hero.eyebrow}</p>
+        <h1>{page.hero.heading}</h1>
+        <p class="work-hero__copy">
+          {page.hero.description}
+        </p>
+        <div class="work-hero__actions">
+          <Button href={page.hero.cta.href}>{page.hero.cta.label}</Button>
+        </div>
+      </div>
+
+      <figure class="work-hero__signal surface">
+        <Image
+          src={evolveDiagram}
+          alt="The MaximisedAI DRIVE model: Discover, Ready, Implement, Validate and Evolve"
+        />
+      </figure>
+    </div>
+  </section>
+
+  <section class="section-band section-band--embers" aria-labelledby={page.deliveryModel.id}>
+    <div class="container">
+      <SectionHeading
+        id={page.deliveryModel.id}
+        eyebrow={page.deliveryModel.eyebrow}
+        title={page.deliveryModel.heading}
+        intro={page.deliveryModel.description}
+      />
+
+      <ol class="delivery-flow">
+        {page.stages.map((stage, index) => (
+          <li class="surface">
+            <span class="delivery-flow__number">
+              {String(index + 1).padStart(2, '0')}
+            </span>
+            <h3>{stage.title}</h3>
+            <div>
+              <p>{stage.description}</p>
+              <ul>
+                {stage.concepts.map((concept) => <li>{concept}</li>)}
+              </ul>
+            </div>
+          </li>
+        ))}
+      </ol>
+
+      <div class="evolve-core surface">
+        <div>
+          <span>{page.evolve.label}</span>
+          <h3>{page.evolve.heading}</h3>
+        </div>
+        <ul>
+          {page.evolve.principles.map((principle) => <li>{principle}</li>)}
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="section-band section-band--horizon governance-band" aria-labelledby={page.governance.id}>
+    <div class="container governance-layout">
+      <SectionHeading
+        id={page.governance.id}
+        eyebrow={page.governance.eyebrow}
+        title={page.governance.heading}
+        intro={page.governance.description}
+      />
+
+      <ul class="governance-list">
+        {page.governance.principles.map((principle, index) => (
+          <li>
+            <span>{String(index + 1).padStart(2, '0')}</span>
+            {principle}
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <section class="section-band section-band--quiet" aria-labelledby={page.engagement.id}>
+    <div class="container">
+      <SectionHeading
+        id={page.engagement.id}
+        eyebrow={page.engagement.eyebrow}
+        title={page.engagement.heading}
+        intro={page.engagement.description}
+      />
+
+      <div class="engagement-grid">
+        {page.engagement.shapes.map((engagement, index) => (
+          <article class="engagement-card surface">
+            <span>{String(index + 1).padStart(2, '0')}</span>
+            <h3>{engagement.title}</h3>
+            <p>{engagement.description}</p>
+          </article>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="cta-band" aria-labelledby={page.cta.id}>
+    <div class="container">
+      <div class="cta-panel surface">
+        <div>
+          <p class="eyebrow">{page.cta.eyebrow}</p>
+          <h2 id={page.cta.id}>{page.cta.heading}</h2>
+          <p>{page.cta.description}</p>
+        </div>
+        <Button href={page.cta.button.href}>{page.cta.button.label}</Button>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .work-hero {
+    position: relative;
+    overflow: hidden;
+    padding-block: clamp(5rem, 11vw, 8.5rem) clamp(4rem, 9vw, 6.5rem);
+  }
+
+  .work-hero::before {
+    position: absolute;
+    right: 7vw;
+    top: 3rem;
+    z-index: -1;
+    width: min(44vw, 34rem);
+    height: min(44vw, 34rem);
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 79, 0, 0.2), transparent 64%);
+    filter: blur(26px);
+    content: "";
+  }
+
+  .work-hero__inner {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(19rem, 27rem);
+    gap: clamp(2rem, 7vw, 5rem);
+    align-items: center;
+  }
+
+  .work-hero__content {
+    max-width: 61rem;
+  }
+
+  .work-hero h1 {
+    margin: 0;
+    max-width: 14ch;
+    font-family: var(--font-display);
+    font-size: clamp(3rem, 8vw, 6.5rem);
+    font-weight: 900;
+    line-height: 0.92;
+    letter-spacing: 0;
+  }
+
+  .work-hero__copy {
+    max-width: 47rem;
+    margin: var(--space-lg) 0 0;
+    color: var(--color-text-muted);
+    font-size: clamp(1.05rem, 2vw, 1.25rem);
+  }
+
+  .work-hero__actions {
+    margin-top: var(--space-xl);
+  }
+
+  .work-hero__signal {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    margin: 0;
+    padding: clamp(1.25rem, 3vw, 2rem);
+    background:
+      radial-gradient(circle at 50% 45%, rgba(255, 176, 0, 0.13), transparent 8rem),
+      radial-gradient(circle at 50% 45%, rgba(255, 79, 0, 0.18), transparent 13rem),
+      linear-gradient(180deg, rgba(247, 243, 237, 0.045), transparent 34%),
+      linear-gradient(135deg, var(--color-panel-hot), var(--color-bg) 72%);
+  }
+
+  .work-hero__signal img {
+    display: block;
+    width: 100%;
+    height: auto;
+    object-fit: contain;
+  }
+
+  .delivery-flow {
+    display: grid;
+    gap: var(--space-md);
+    margin: var(--space-2xl) 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .delivery-flow > li {
+    position: relative;
+    display: grid;
+    grid-template-columns: 4rem minmax(9rem, 0.45fr) minmax(0, 1fr);
+    gap: clamp(1rem, 3vw, 2.5rem);
+    align-items: start;
+    overflow: hidden;
+    padding: clamp(1.25rem, 3vw, 2rem);
+  }
+
+  .delivery-flow > li::after {
+    position: absolute;
+    left: calc(clamp(1.25rem, 3vw, 2rem) + 1.35rem);
+    top: 4.2rem;
+    bottom: calc(var(--space-md) * -1 - 1px);
+    width: 2px;
+    background: linear-gradient(var(--color-brand), rgba(255, 176, 0, 0.28));
+    content: "";
+  }
+
+  .delivery-flow > li:last-child::after {
+    display: none;
+  }
+
+  .delivery-flow__number {
+    display: grid;
+    width: 2.7rem;
+    height: 2.7rem;
+    place-items: center;
+    border: 1px solid var(--color-border-strong);
+    border-radius: 50%;
+    background: var(--color-panel-hot);
+    box-shadow: var(--shadow-ember);
+    color: var(--color-brand);
+    font-size: 0.78rem;
+    font-weight: 900;
+  }
+
+  .delivery-flow h3 {
+    margin: 0;
+    font-size: clamp(1.5rem, 3vw, 2.35rem);
+    line-height: 1;
+  }
+
+  .delivery-flow p {
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: clamp(1rem, 1.6vw, 1.12rem);
+  }
+
+  .delivery-flow ul,
+  .evolve-core ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+    margin: var(--space-md) 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .delivery-flow > li li,
+  .evolve-core li {
+    border: 1px solid rgba(247, 243, 237, 0.1);
+    border-radius: var(--radius-sm);
+    padding: 0.32rem 0.52rem;
+    background: rgba(247, 243, 237, 0.035);
+    color: var(--color-text-muted);
+    font-size: 0.78rem;
+    font-weight: 800;
+    text-transform: lowercase;
+  }
+
+  .evolve-core {
+    display: grid;
+    grid-template-columns: minmax(10rem, 0.35fr) minmax(0, 1fr);
+    gap: var(--space-lg);
+    align-items: center;
+    margin-top: var(--space-md);
+    padding: clamp(1.25rem, 3vw, 2rem);
+  }
+
+  .evolve-core span {
+    color: var(--color-brand);
+    font-size: 0.74rem;
+    font-weight: 900;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .evolve-core h3 {
+    margin: var(--space-xs) 0 0;
+    color: var(--color-brand-amber);
+    font-size: clamp(1.8rem, 4vw, 3rem);
+    line-height: 1;
+  }
+
+  .governance-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+    gap: clamp(2.5rem, 7vw, 5rem);
+    align-items: start;
+  }
+
+  .governance-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .governance-list li {
+    display: grid;
+    grid-template-columns: 3rem minmax(0, 1fr);
+    gap: var(--space-md);
+    border-top: 1px solid var(--color-border);
+    padding-block: var(--space-lg);
+    color: var(--color-text);
+    font-size: clamp(1rem, 2vw, 1.25rem);
+    font-weight: 800;
+  }
+
+  .governance-list li:last-child {
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .governance-list span,
+  .engagement-card > span {
+    color: var(--color-brand);
+    font-size: 0.78rem;
+    font-weight: 900;
+  }
+
+  .engagement-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-md);
+    margin-top: var(--space-2xl);
+  }
+
+  .engagement-card {
+    min-height: 18rem;
+    padding: clamp(1.25rem, 3vw, 2rem);
+  }
+
+  .engagement-card::before {
+    display: block;
+    width: 2.4rem;
+    height: 0.18rem;
+    margin-bottom: var(--space-lg);
+    border-radius: 999px;
+    background: var(--color-brand);
+    box-shadow: 0 0 18px rgba(255, 79, 0, 0.36);
+    content: "";
+  }
+
+  .engagement-card h3 {
+    margin: var(--space-md) 0 0;
+    max-width: 20ch;
+    font-size: clamp(1.45rem, 3vw, 2.15rem);
+    line-height: 1;
+  }
+
+  .engagement-card p {
+    margin: var(--space-lg) 0 0;
+    max-width: 36rem;
+    color: var(--color-text-muted);
+  }
+
+  @media (max-width: 900px) {
+    .work-hero__inner,
+    .governance-layout {
+      grid-template-columns: 1fr;
+    }
+
+    .delivery-flow > li {
+      grid-template-columns: 4rem minmax(0, 1fr);
+    }
+
+    .delivery-flow p {
+      grid-column: 2;
+    }
+
+    .delivery-flow ul {
+      grid-column: 2;
+    }
+
+    .evolve-core {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 680px) {
+    .engagement-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .engagement-card {
+      min-height: auto;
+    }
+  }
+
+  @media (max-width: 560px) {
+    .work-hero {
+      padding-block-start: 3.5rem;
+    }
+
+    .work-hero h1 {
+      font-size: clamp(2.7rem, 14vw, 4.4rem);
+    }
+
+    .delivery-flow > li {
+      grid-template-columns: 3rem minmax(0, 1fr);
+    }
+
+    .delivery-flow > li::after {
+      left: calc(clamp(1.25rem, 3vw, 2rem) + 1.1rem);
+    }
+
+    .delivery-flow__number {
+      width: 2.2rem;
+      height: 2.2rem;
+    }
+  }
+</style>

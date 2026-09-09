@@ -1,0 +1,291 @@
+---
+import Button from '../components/Button.astro';
+import SectionHeading from '../components/SectionHeading.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { loadPageData } from '../data/pages';
+import heroImage from '../images/premium_photo-1714618833577-a09acdf53789.jpg';
+import { Image } from 'astro:assets';
+import superCityImage from '../images/new-supercity.png';
+
+const page = await loadPageData('home');
+---
+
+<BaseLayout
+  title={page.title}
+  description={page.description}
+>
+  <section class="hero">
+    <div class="hero__inner container">
+      <div class="hero__content">
+        <p class="eyebrow">{page.hero.eyebrow}</p>
+        <h1>{page.hero.heading}</h1>
+        <p class="hero__copy">
+          {page.hero.description}
+        </p>
+        <div class="hero__actions" aria-label="Primary actions">
+          <Button href={page.hero.primaryCta.href}>{page.hero.primaryCta.label}</Button>
+          <Button href={page.hero.secondaryCta.href} variant="secondary">{page.hero.secondaryCta.label}</Button>
+        </div>
+      </div>
+      <div class="hero__signal surface" aria-hidden="true">
+        <img
+          class="hero__signal-image"
+          src={heroImage.src}
+          alt=""
+          width={heroImage.width}
+          height={heroImage.height}
+          loading="eager"
+        />
+      </div>
+    </div>
+  </section>
+
+  <section class="section-band section-band--fire-glow" aria-labelledby={page.whatWeBuild.id}>
+    <div class="container">
+      <SectionHeading
+        id={page.whatWeBuild.id}
+        eyebrow={page.whatWeBuild.eyebrow}
+        title={page.whatWeBuild.heading}
+        intro={page.whatWeBuild.description}
+      />
+
+      <div class="capability-grid">
+        {
+          page.whatWeBuild.cards.map((capability) => (
+            <a class="capability-card surface" href={capability.href}>
+              <h3>{capability.title}</h3>
+              <p>{capability.description}</p>
+            </a>
+          ))
+        }
+      </div>
+
+      <div class="section-link">
+        <Button href={page.whatWeBuild.cta.href} variant="text">{page.whatWeBuild.cta.label}</Button>
+      </div>
+    </div>
+  </section>
+
+  <section class="section-band section-band--embers" aria-labelledby={page.selectedWork.id}>
+    <div class="container">
+      <SectionHeading
+        id={page.selectedWork.id}
+        eyebrow={page.selectedWork.eyebrow}
+        title={page.selectedWork.heading}
+      />
+
+      <article class="case-feature surface">
+        <div class="case-feature__media">
+          <Image
+            src={superCityImage}
+            alt={page.selectedWork.imageAlt}
+            width={superCityImage.width}
+            height={superCityImage.height}
+            loading="lazy"
+          />
+        </div>
+        <div class="case-feature__body">
+          <span class="case-feature__label">{page.selectedWork.label}</span>
+          <h3>{page.selectedWork.title}</h3>
+          <dl>
+            <div>
+              <dt>{page.selectedWork.problemLabel}</dt>
+              <dd>{page.selectedWork.problem}</dd>
+            </div>
+            <div>
+              <dt>{page.selectedWork.workLabel}</dt>
+              <dd>{page.selectedWork.work}</dd>
+            </div>
+          </dl>
+          <div class="section-link">
+            <Button href={page.selectedWork.cta.href} variant="text">{page.selectedWork.cta.label}</Button>
+          </div>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section class="section-band section-band--horizon" aria-labelledby={page.products.id}>
+    <div class="container">
+      <SectionHeading
+        id={page.products.id}
+        eyebrow={page.products.eyebrow}
+        title={page.products.heading}
+        intro={page.products.description}
+      />
+
+      <ol class="home-drive-grid">
+        {
+          page.products.stages.map((stage, index) => (
+            <li class="home-drive-card surface">
+              <span class="home-drive-card__number">{String(index + 1).padStart(2, '0')}</span>
+              <h3>{stage.title}</h3>
+              <strong>{stage.offer}</strong>
+              {stage.priceDisplay && <small>{stage.priceDisplay}</small>}
+              <p>{stage.description}</p>
+            </li>
+          ))
+        }
+      </ol>
+
+      <div class="section-link">
+        <Button href={page.products.cta.href}>{page.products.cta.label}</Button>
+      </div>
+    </div>
+  </section>
+
+  <section class="section-band section-band--quiet" aria-labelledby={page.howWeWork.id}>
+    <div class="container">
+      <SectionHeading
+        id={page.howWeWork.id}
+        eyebrow={page.howWeWork.eyebrow}
+        title={page.howWeWork.heading}
+      />
+
+      <ol class="stage-list">
+        {
+          page.howWeWork.stages.map((stage, index) => (
+            <li class="stage">
+              <span class="stage__number">{String(index + 1).padStart(2, '0')}</span>
+              <h3>{stage.title}</h3>
+              <p>{stage.description}</p>
+            </li>
+          ))
+        }
+      </ol>
+
+      <div class="section-link">
+        <Button href={page.howWeWork.cta.href} variant="text">{page.howWeWork.cta.label}</Button>
+      </div>
+    </div>
+  </section>
+
+  <section class="section-band section-band--warm-vignette" aria-labelledby={page.waysToWork.id}>
+    <div class="container">
+      <SectionHeading
+        id={page.waysToWork.id}
+        eyebrow={page.waysToWork.eyebrow}
+        title={page.waysToWork.heading}
+        intro={page.waysToWork.description}
+      />
+
+      <div class="pathway-grid">
+        {
+          page.waysToWork.pathways.map((pathway) => (
+            <article class="pathway-card surface">
+              <h3>{pathway.title}</h3>
+              <p>{pathway.description}</p>
+            </article>
+          ))
+        }
+      </div>
+
+      <div class="section-link">
+        <Button href={page.waysToWork.cta.href} variant="text">{page.waysToWork.cta.label}</Button>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta-band section-band--energy-arc">
+    <div class="container">
+      <div class="cta-panel surface">
+        <div>
+          <p class="eyebrow">{page.cta.eyebrow}</p>
+          <h2>{page.cta.heading}</h2>
+          <p>
+            {page.cta.description}
+          </p>
+        </div>
+        <Button href={page.cta.button.href}>{page.cta.button.label}</Button>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .home-drive-grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: var(--space-sm);
+    margin: var(--space-2xl) 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .home-drive-card {
+    position: relative;
+    display: grid;
+    min-height: 20rem;
+    grid-template-rows: auto auto auto auto 1fr;
+    overflow: hidden;
+    padding: var(--space-lg);
+  }
+
+  .home-drive-card::before {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 2px;
+    background: linear-gradient(180deg, var(--color-brand), transparent 72%);
+    content: "";
+  }
+
+  .home-drive-card__number {
+    color: var(--color-brand);
+    font-size: 0.76rem;
+    font-weight: 900;
+  }
+
+  .home-drive-card h3 {
+    margin: var(--space-xl) 0 0;
+    font-size: clamp(1.35rem, 2.4vw, 2rem);
+    line-height: 1;
+  }
+
+  .home-drive-card strong {
+    margin-top: var(--space-md);
+    color: var(--color-brand-amber);
+    font-size: 0.82rem;
+    line-height: 1.3;
+  }
+
+  .home-drive-card small {
+    width: fit-content;
+    margin-top: var(--space-sm);
+    border: 1px solid var(--color-border-strong);
+    border-radius: 999px;
+    padding: 0.2rem 0.55rem;
+    color: var(--color-text);
+    font-size: 0.72rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .home-drive-card p {
+    align-self: end;
+    margin: var(--space-lg) 0 0;
+    color: var(--color-text-muted);
+  }
+
+  @media (max-width: 1020px) {
+    .home-drive-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .home-drive-card:last-child {
+      grid-column: 1 / -1;
+    }
+  }
+
+  @media (max-width: 620px) {
+    .home-drive-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .home-drive-card,
+    .home-drive-card:last-child {
+      min-height: 15rem;
+      grid-column: auto;
+    }
+  }
+</style>
