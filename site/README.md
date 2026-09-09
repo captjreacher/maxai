@@ -36,6 +36,27 @@ All commands are run from the root of the project, from a terminal:
 | `npm run build`           | Build your production site to `./dist/`          |
 | `npm run preview`         | Preview your build locally, before deploying     |
 | `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
+
+## Catalogue-triggered production build
+
+Billing is the commercial source of truth. After a committed public
+MaximisedAI product/plan change or price publication, the Billing API sends the
+`billing-maxai-catalogue-published` repository dispatch. The
+`Deploy MaxAI Static Site` workflow runs the site tests, performs a required
+build-time catalogue read, checks that secret material is absent from `dist/`,
+and deploys `dist/` to the existing `maxai` Cloudflare Worker as Static
+Assets. The workflow can also be started manually with `workflow_dispatch`.
+
+Configure these as GitHub Actions repository or environment secrets:
+
+- `MAXAI_BILLING_CATALOGUE_API_BASE_URL`
+- `MAXAI_BILLING_CATALOGUE_BEARER_TOKEN`
+- `CLOUDFLARE_API_TOKEN`
+- `CLOUDFLARE_ACCOUNT_ID`
+
+The Wrangler configuration intentionally contains no `route` or `routes`.
+Binding `maximisedai.com` and changing DNS are separate, explicitly approved
+cutover actions.
 | `npm run astro -- --help` | Get help using the Astro CLI                     |
 
 ## 👀 Want to learn more?

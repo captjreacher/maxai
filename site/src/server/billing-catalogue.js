@@ -161,6 +161,7 @@ async function resolveCommercialProduct(
   bearerToken,
   fetchImplementation,
   now,
+  required,
 ) {
   const productId = String(product.productId);
   const fallback = {
@@ -211,7 +212,8 @@ async function resolveCommercialProduct(
       isSellable: true,
       ...(commercial ?? {}),
     };
-  } catch {
+  } catch (error) {
+    if (required) throw error;
     return fallback;
   }
 }
@@ -234,8 +236,14 @@ export async function loadBillingCatalogueSnapshot({
 } = {}) {
   const configuredUrl = env.MAXAI_BILLING_CATALOGUE_API_BASE_URL?.trim();
   const bearerToken = env.MAXAI_BILLING_CATALOGUE_BEARER_TOKEN?.trim();
+  const required = env.MAXAI_BILLING_CATALOGUE_REQUIRED === 'true';
 
-  if (!configuredUrl || !bearerToken) return null;
+  if (!configuredUrl || !bearerToken) {
+    if (required) {
+      throw new Error('Required Billing catalogue build configuration is missing.');
+    }
+    return null;
+  }
 
   try {
     const baseUrl = validateBaseUrl(configuredUrl);
@@ -266,12 +274,22 @@ export async function loadBillingCatalogueSnapshot({
           bearerToken,
           fetchImplementation,
           now,
+          required,
         ),
       ),
     );
 
+    if (required && resolvedProducts.length === 0) {
+      throw new Error('Required Billing catalogue returned no recognised products.');
+    }
+
     return { products: resolvedProducts };
-  } catch {
+  } catch (error) {
+    if (required) {
+      throw new Error('Required Billing catalogue could not be loaded.', {
+        cause: error,
+      });
+    }
     return null;
   }
 }

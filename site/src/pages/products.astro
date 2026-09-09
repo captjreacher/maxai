@@ -18,6 +18,8 @@ const billingCatalogue = await loadBillingCatalogueSnapshot({
       import.meta.env.MAXAI_BILLING_CATALOGUE_API_BASE_URL,
     MAXAI_BILLING_CATALOGUE_BEARER_TOKEN:
       import.meta.env.MAXAI_BILLING_CATALOGUE_BEARER_TOKEN,
+    MAXAI_BILLING_CATALOGUE_REQUIRED:
+      import.meta.env.MAXAI_BILLING_CATALOGUE_REQUIRED,
   },
 });
 const stages = getDriveProductExperience(billingCatalogue, page.productStages);

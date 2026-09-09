@@ -124,6 +124,19 @@ test('missing build-only Billing configuration falls back without a request', as
   assert.equal(requestCount, 0);
 });
 
+test('required production catalogue fails the build instead of deploying fallback data', async () => {
+  await assert.rejects(
+    loadBillingCatalogueSnapshot({
+      env: {
+        ...ENV,
+        MAXAI_BILLING_CATALOGUE_REQUIRED: 'true',
+      },
+      fetchImplementation: async () => response({}, 503),
+    }),
+    /Required Billing catalogue could not be loaded/,
+  );
+});
+
 test('an unavailable Billing API falls back safely', async () => {
   const snapshot = await loadBillingCatalogueSnapshot({
     env: ENV,
