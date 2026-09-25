@@ -189,14 +189,34 @@ try {
 
   const productsHtml = await readFile(resolve('dist/products/index.html'), 'utf8');
   const pricingHtml = await readFile(resolve('dist/pricing/index.html'), 'utf8');
+  const driveOneMonthHtml = await readFile(
+    resolve('dist/drive/get-started/plan-mgrnz-drive-one-month/index.html'),
+    'utf8',
+  );
   assert.match(productsHtml, /Fixture Landing Page Website/);
   assert.match(productsHtml, /NZD \$910\.00 excl\. GST · one-off/);
   assert.match(productsHtml, /DRIVE — One-month programme/);
   assert.match(productsHtml, /NZD \$1,250\.00 excl\. GST · one-off/);
+  assert.match(
+    productsHtml,
+    /\/drive\/get-started\/plan-mgrnz-drive-one-month\//,
+  );
+  assert.match(
+    productsHtml,
+    /\/contact\?service=drive-strategy-session#problem-form-heading/,
+  );
   assert.match(pricingHtml, /DRIVE productivity improvement offers/);
   assert.match(pricingHtml, /NZD \$1,100\.00 excl\. GST · per month/);
+  assert.match(
+    pricingHtml,
+    /\/drive\/get-started\/plan-mgrnz-drive-one-month\//,
+  );
   assert.match(pricingHtml, /DRIVE Additional Strategy Session/);
   assert.match(pricingHtml, /POA/);
+  assert.match(driveOneMonthHtml, /Billing plan/);
+  assert.match(driveOneMonthHtml, /plan-mgrnz-drive-one-month/);
+  assert.match(driveOneMonthHtml, /NZD \$1,250\.00 excl\. GST · one-off/);
+  assert.match(driveOneMonthHtml, /does not charge a card/);
   await verifyDistNoSecrets({
     env: {
       MAXAI_BILLING_CATALOGUE_API_BASE_URL: baseUrl,

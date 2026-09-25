@@ -169,8 +169,14 @@ test('matches Billing commercial state by plan for multi-plan DRIVE offers', () 
 
   assert.equal(oneMonthOffer.name, 'DRIVE — One-month programme');
   assert.equal(oneMonthOffer.priceDisplay, 'NZD $1,250.00 excl. GST · one-off');
+  assert.equal(oneMonthOffer.ctaLabel, 'Get started');
+  assert.equal(
+    oneMonthOffer.ctaHref,
+    '/drive/get-started/plan-mgrnz-drive-one-month/',
+  );
   assert.equal(ongoingOffer.name, 'DRIVE — Ongoing');
   assert.equal(ongoingOffer.priceDisplay, 'NZD $1,100.00 excl. GST · per month');
+  assert.equal(ongoingOffer.ctaHref, '/drive/get-started/plan-mgrnz-drive-ongoing/');
   assert.deepEqual(oneMonthOffer.commercialState, {
     planId: oneMonth.planId,
     lifecycleStatus: 'published',
@@ -220,6 +226,7 @@ test('uses POA display and discussion CTA when Billing marks a sellable POA plan
 
   assert.equal(offer.priceDisplay, 'POA');
   assert.equal(offer.ctaLabel, 'Discuss requirement');
+  assert.equal(offer.ctaHref, undefined);
   assert.deepEqual(offer.commercialState, {
     planId: product.planId,
     lifecycleStatus: 'published',

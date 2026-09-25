@@ -1,0 +1,464 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import {
+  FIXED_DRIVE_PLAN_IDS,
+  buildDrivePurchaseIntakeFields,
+  isFixedDriveCommercialOffer,
+} from '../../../data/drive-purchase.js';
+import { getDriveProductExperience } from '../../../data/product-catalogue.js';
+import { loadPageData } from '../../../data/pages';
+import { loadBillingCatalogueSnapshot } from '../../../server/billing-catalogue.js';
+
+const intakeEndpoint =
+  import.meta.env.PUBLIC_MAXAI_INTAKE_ENDPOINT ??
+  'https://jqfodlzcsgfocyuawzyx.supabase.co/functions/v1/mgrnz-public-intake';
+
+export async function getStaticPaths() {
+  const productsPage = await loadPageData('products');
+  const billingCatalogue = await loadBillingCatalogueSnapshot({
+    env: {
+      MAXAI_BILLING_CATALOGUE_API_BASE_URL:
+        import.meta.env.MAXAI_BILLING_CATALOGUE_API_BASE_URL,
+      MAXAI_BILLING_CATALOGUE_API_KEY:
+        import.meta.env.MAXAI_BILLING_CATALOGUE_API_KEY,
+      MAXAI_BILLING_CATALOGUE_BEARER_TOKEN:
+        import.meta.env.MAXAI_BILLING_CATALOGUE_BEARER_TOKEN,
+      MAXAI_BILLING_CATALOGUE_REQUIRED:
+        import.meta.env.MAXAI_BILLING_CATALOGUE_REQUIRED,
+    },
+  });
+
+  const offers = getDriveProductExperience(billingCatalogue, productsPage.productStages)
+    .flatMap((stage) =>
+      (stage.offers ?? []).map((offer) => ({
+        ...offer,
+        stageTitle: stage.title,
+        stageMarker: stage.marker,
+      })),
+    )
+    .filter((offer) => FIXED_DRIVE_PLAN_IDS.includes(offer.planId));
+  const offersByPlanId = new Map(offers.map((offer) => [offer.planId, offer]));
+
+  return FIXED_DRIVE_PLAN_IDS.map((planId) => ({
+    params: { planId },
+    props: {
+      offer: offersByPlanId.get(planId) ?? null,
+    },
+  }));
+}
+
+const { offer } = Astro.props;
+const isAvailable = offer ? isFixedDriveCommercialOffer(offer) : false;
+const pageTitle = offer ? `${offer.name} | DRIVE get started` : 'DRIVE get started';
+const pageDescription = offer
+  ? `Get started with ${offer.name}, backed by Billing plan ${offer.planId}.`
+  : 'Get started with a fixed-price DRIVE offer.';
+---
+
+<BaseLayout
+  title={pageTitle}
+  description={pageDescription}
+>
+  <section class="drive-start-hero section-band--fire-glow">
+    <div class="drive-start-hero__inner container">
+      <div class="drive-start-hero__copy">
+        <p class="eyebrow">DRIVE Get Started</p>
+        <h1>{offer?.name ?? 'DRIVE offer unavailable'}</h1>
+        <p>
+          Confirm the selected DRIVE offer and send the details needed to prepare the next commercial step.
+        </p>
+      </div>
+
+      <aside class="drive-selection surface" aria-label="Selected DRIVE offer">
+        <p>Selected offer</p>
+        {offer ? (
+          <>
+            <h2>{offer.name}</h2>
+            <dl>
+              <div>
+                <dt>Published price</dt>
+                <dd>{offer.priceDisplay}</dd>
+              </div>
+              <div>
+                <dt>Billing plan</dt>
+                <dd>{offer.planId}</dd>
+              </div>
+              <div>
+                <dt>Product</dt>
+                <dd>{offer.productId}</dd>
+              </div>
+            </dl>
+          </>
+        ) : (
+          <p>This DRIVE plan is not available for online get-started.</p>
+        )}
+      </aside>
+    </div>
+  </section>
+
+  <section class="section-band section-band--horizon" aria-labelledby="drive-start-form-heading">
+    <div class="container drive-start-layout">
+      <div class="drive-start-intro">
+        <p class="eyebrow">No automatic charge</p>
+        <h2 id="drive-start-form-heading">Confirm who we should prepare this for.</h2>
+        <p>
+          This sends a purchase request for human follow-up. It does not charge a card,
+          create an invoice, start provisioning, or activate a Billing agreement.
+        </p>
+      </div>
+
+      {isAvailable ? (
+        <form
+          class="drive-start-form surface"
+          method="post"
+          data-drive-start-form
+          data-intake-endpoint={intakeEndpoint}
+          data-offer={JSON.stringify({
+            productId: offer.productId,
+            planId: offer.planId,
+            name: offer.name,
+            priceDisplay: offer.priceDisplay,
+            commercialState: offer.commercialState,
+          })}
+          aria-describedby="drive-start-status drive-start-note"
+        >
+          <div class="field-grid">
+            <div class="form-field">
+              <label for="name">Name</label>
+              <input id="name" name="name" type="text" autocomplete="name" maxlength="120" required />
+            </div>
+
+            <div class="form-field">
+              <label for="email">Email</label>
+              <input id="email" name="email" type="email" autocomplete="email" maxlength="320" required />
+            </div>
+
+            <div class="form-field">
+              <label for="phone">Phone <span>optional</span></label>
+              <input id="phone" name="phone" type="tel" autocomplete="tel" />
+            </div>
+
+            <div class="form-field">
+              <label for="organisation">Organisation</label>
+              <input
+                id="organisation"
+                name="organisation"
+                type="text"
+                autocomplete="organization"
+                maxlength="160"
+                required
+              />
+            </div>
+
+            <div class="form-field">
+              <label for="preferred-start">Preferred start</label>
+              <select id="preferred-start" name="preferredStart" required>
+                <option value="" selected disabled>Select timing</option>
+                <option value="As soon as practical">As soon as practical</option>
+                <option value="Within 2 weeks">Within 2 weeks</option>
+                <option value="This month">This month</option>
+                <option value="Next month">Next month</option>
+              </select>
+            </div>
+
+            <div class="form-field form-field--full">
+              <label for="notes">Anything we should know before confirming?</label>
+              <textarea id="notes" name="notes" rows="5" maxlength="900"></textarea>
+            </div>
+
+            <div class="form-field form-field--full readonly-field">
+              <label for="billing-plan-id">Billing plan ID</label>
+              <input id="billing-plan-id" name="billingPlanId" type="text" value={offer.planId} readonly />
+            </div>
+
+            <div class="honeypot" aria-hidden="true">
+              <label for="website">Website</label>
+              <input id="website" name="website" type="text" autocomplete="off" tabindex="-1" />
+            </div>
+          </div>
+
+          <button class="form-submit" type="submit" data-submit-button>
+            <span data-submit-label>Get started</span>
+          </button>
+          <p class="form-status" id="drive-start-status" aria-live="polite" aria-atomic="true"></p>
+          <p class="privacy-note" id="drive-start-note">
+            We will confirm the commercial details before any Billing agreement, invoice, payment or provisioning action.
+          </p>
+        </form>
+      ) : (
+        <div class="drive-unavailable surface">
+          <h3>This fixed-price DRIVE offer is not currently available online.</h3>
+          <p>
+            The Billing catalogue did not provide a current published fixed price for this plan during the build.
+          </p>
+          <a class="button button--secondary" href="/pricing/">Return to pricing</a>
+        </div>
+      )}
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .drive-start-hero {
+    position: relative;
+    overflow: hidden;
+    padding-block: clamp(5rem, 11vw, 8.5rem) clamp(4rem, 9vw, 6.5rem);
+  }
+
+  .drive-start-hero__inner,
+  .drive-start-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(20rem, 31rem);
+    gap: clamp(2rem, 6vw, 5rem);
+    align-items: start;
+  }
+
+  .drive-start-hero__copy {
+    max-width: 62rem;
+  }
+
+  .drive-start-hero h1 {
+    margin: 0;
+    max-width: 12ch;
+    font-family: var(--font-display);
+    font-size: clamp(3rem, 8vw, 6.2rem);
+    font-weight: 900;
+    line-height: 0.92;
+  }
+
+  .drive-start-hero__copy p:not(.eyebrow),
+  .drive-start-intro p,
+  .privacy-note,
+  .drive-unavailable p {
+    color: var(--color-text-muted);
+  }
+
+  .drive-selection,
+  .drive-start-form,
+  .drive-unavailable {
+    padding: clamp(1.25rem, 3vw, 2rem);
+  }
+
+  .drive-selection > p {
+    margin: 0;
+    color: var(--color-text-subtle);
+    font-size: 0.76rem;
+    font-weight: 900;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .drive-selection h2 {
+    margin: var(--space-sm) 0 0;
+    font-size: clamp(1.7rem, 4vw, 2.6rem);
+    line-height: 1;
+  }
+
+  .drive-selection dl {
+    display: grid;
+    gap: var(--space-sm);
+    margin: var(--space-lg) 0 0;
+  }
+
+  .drive-selection div {
+    border-top: 1px solid var(--color-border);
+    padding-top: var(--space-sm);
+  }
+
+  .drive-selection dt {
+    color: var(--color-text-subtle);
+    font-size: 0.75rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .drive-selection dd {
+    margin: 0.25rem 0 0;
+    overflow-wrap: anywhere;
+    font-weight: 800;
+  }
+
+  .field-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-md);
+  }
+
+  .form-field {
+    display: grid;
+    gap: 0.45rem;
+  }
+
+  .form-field--full {
+    grid-column: 1 / -1;
+  }
+
+  label {
+    color: var(--color-text);
+    font-weight: 800;
+  }
+
+  label span {
+    color: var(--color-text-subtle);
+    font-weight: 600;
+  }
+
+  input,
+  select,
+  textarea {
+    width: 100%;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 0.85rem 0.95rem;
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--color-text);
+    font: inherit;
+  }
+
+  textarea {
+    resize: vertical;
+  }
+
+  .readonly-field input {
+    color: var(--color-text-muted);
+  }
+
+  .honeypot {
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+  }
+
+  .form-submit {
+    min-height: 3rem;
+    margin-top: var(--space-lg);
+    border: 0;
+    border-radius: var(--radius-md);
+    padding: 0.85rem 1.2rem;
+    background: var(--color-brand);
+    color: var(--color-ink);
+    font: inherit;
+    font-weight: 900;
+    cursor: pointer;
+  }
+
+  .form-submit:disabled {
+    cursor: not-allowed;
+    opacity: 0.65;
+  }
+
+  .form-status {
+    min-height: 1.4rem;
+    margin: var(--space-md) 0 0;
+    color: var(--color-text-muted);
+  }
+
+  .form-status[data-state="success"] {
+    color: var(--color-brand-amber);
+  }
+
+  .form-status[data-state="error"] {
+    color: var(--color-brand-hot);
+  }
+
+  @media (max-width: 820px) {
+    .drive-start-hero__inner,
+    .drive-start-layout,
+    .field-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<script>
+  import {
+    MESSAGE_MAX_LENGTH,
+    MESSAGE_MIN_LENGTH,
+    buildIntakePayload,
+    submitIntake,
+  } from '../../../scripts/contact-intake.js';
+  import { buildDrivePurchaseIntakeFields } from '../../../data/drive-purchase.js';
+
+  const form = document.querySelector('[data-drive-start-form]');
+  const submitButton = form?.querySelector('[data-submit-button]');
+  const submitLabel = form?.querySelector('[data-submit-label]');
+  const status = form?.querySelector('#drive-start-status');
+
+  if (
+    form instanceof HTMLFormElement &&
+    submitButton instanceof HTMLButtonElement &&
+    submitLabel instanceof HTMLElement &&
+    status instanceof HTMLParagraphElement
+  ) {
+    const endpoint = form.dataset.intakeEndpoint?.trim() ?? '';
+    const offer = JSON.parse(form.dataset.offer ?? '{}');
+    const idleSubmitLabel = submitLabel.textContent?.trim() ?? 'Get started';
+    let pending = false;
+
+    const setStatus = (message, state = '') => {
+      status.textContent = message;
+      if (state) {
+        status.dataset.state = state;
+      } else {
+        delete status.dataset.state;
+      }
+    };
+
+    const setPending = (isPending) => {
+      pending = isPending;
+      submitButton.disabled = isPending;
+      submitLabel.textContent = isPending ? 'Sending request...' : idleSubmitLabel;
+      form.setAttribute('aria-busy', String(isPending));
+    };
+
+    if (!endpoint) {
+      submitButton.disabled = true;
+      setStatus('The intake endpoint is unavailable. Please return to contact.', 'error');
+    }
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+
+      if (pending || !endpoint || !form.reportValidity()) {
+        return;
+      }
+
+      const formData = new FormData(form);
+      const fields = buildDrivePurchaseIntakeFields(offer, {
+        name: String(formData.get('name') ?? ''),
+        email: String(formData.get('email') ?? ''),
+        organisation: String(formData.get('organisation') ?? ''),
+        phone: String(formData.get('phone') ?? ''),
+        preferredStart: String(formData.get('preferredStart') ?? ''),
+        notes: String(formData.get('notes') ?? ''),
+        website: String(formData.get('website') ?? ''),
+      });
+      const payload = buildIntakePayload(fields, document.referrer, window.location.pathname);
+
+      if (payload.message.length < MESSAGE_MIN_LENGTH || payload.message.length > MESSAGE_MAX_LENGTH) {
+        setStatus('Please shorten the notes and try again.', 'error');
+        return;
+      }
+
+      setPending(true);
+      setStatus('Sending your DRIVE get-started request...');
+
+      try {
+        await submitIntake(endpoint, payload);
+
+        form.reset();
+        setStatus(
+          'Thanks. Your DRIVE get-started request has been received. We will confirm the commercial details before any Billing action.',
+          'success',
+        );
+      } catch {
+        setStatus('The request could not be sent. Please try again or use the contact page.', 'error');
+      } finally {
+        setPending(false);
+      }
+    });
+  }
+</script>
