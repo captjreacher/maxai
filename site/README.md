@@ -50,9 +50,13 @@ Assets. The workflow can also be started manually with `workflow_dispatch`.
 Configure these as GitHub Actions repository or environment secrets:
 
 - `MAXAI_BILLING_CATALOGUE_API_BASE_URL`
-- `MAXAI_BILLING_CATALOGUE_BEARER_TOKEN`
+- `MAXAI_BILLING_CATALOGUE_API_KEY`
 - `CLOUDFLARE_API_TOKEN`
 - `CLOUDFLARE_ACCOUNT_ID`
+
+`MAXAI_BILLING_CATALOGUE_API_KEY` must be a Billing API key whose hash is
+configured on Billing with `ADMIN_API_KEY_ROLES=runtime.viewer`. Do not store
+Billing's `ADMIN_AUTH_SIGNING_KEY_B64` in this repository.
 
 The Wrangler configuration intentionally contains no `route` or `routes`.
 Binding `maximisedai.com` and changing DNS are separate, explicitly approved

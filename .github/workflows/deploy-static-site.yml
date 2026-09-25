@@ -40,14 +40,14 @@ jobs:
         run: npm run build
         env:
           MAXAI_BILLING_CATALOGUE_API_BASE_URL: ${{ secrets.MAXAI_BILLING_CATALOGUE_API_BASE_URL }}
-          MAXAI_BILLING_CATALOGUE_BEARER_TOKEN: ${{ secrets.MAXAI_BILLING_CATALOGUE_BEARER_TOKEN }}
+          MAXAI_BILLING_CATALOGUE_API_KEY: ${{ secrets.MAXAI_BILLING_CATALOGUE_API_KEY }}
           MAXAI_BILLING_CATALOGUE_REQUIRED: 'true'
 
       - name: Verify server and CI secrets are absent from dist
         run: npm run verify:dist
         env:
           MAXAI_BILLING_CATALOGUE_API_BASE_URL: ${{ secrets.MAXAI_BILLING_CATALOGUE_API_BASE_URL }}
-          MAXAI_BILLING_CATALOGUE_BEARER_TOKEN: ${{ secrets.MAXAI_BILLING_CATALOGUE_BEARER_TOKEN }}
+          MAXAI_BILLING_CATALOGUE_API_KEY: ${{ secrets.MAXAI_BILLING_CATALOGUE_API_KEY }}
 
       - name: Deploy Cloudflare Worker Static Assets
         run: npm run deploy

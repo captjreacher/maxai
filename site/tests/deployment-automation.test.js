@@ -23,7 +23,9 @@ test('receives Billing repository_dispatch and retains manual recovery', () => {
 test('builds from CI-only Billing secrets before deploying Static Assets', () => {
   assert.match(workflow, /npm run build/);
   assert.match(workflow, /secrets\.MAXAI_BILLING_CATALOGUE_API_BASE_URL/);
-  assert.match(workflow, /secrets\.MAXAI_BILLING_CATALOGUE_BEARER_TOKEN/);
+  assert.match(workflow, /secrets\.MAXAI_BILLING_CATALOGUE_API_KEY/);
+  assert.doesNotMatch(workflow, /secrets\.MAXAI_BILLING_CATALOGUE_BEARER_TOKEN/);
+  assert.doesNotMatch(workflow, /ADMIN_AUTH_SIGNING_KEY_B64/);
   assert.match(workflow, /MAXAI_BILLING_CATALOGUE_REQUIRED: 'true'/);
   assert.match(workflow, /npm run verify:dist/);
   assert.match(workflow, /npm run deploy/);

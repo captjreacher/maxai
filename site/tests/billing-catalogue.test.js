@@ -5,7 +5,7 @@ import { loadBillingCatalogueSnapshot } from '../src/server/billing-catalogue.js
 
 const ENV = {
   MAXAI_BILLING_CATALOGUE_API_BASE_URL: 'https://billing.example.test/api/v1',
-  MAXAI_BILLING_CATALOGUE_BEARER_TOKEN: 'test.viewer.token',
+  MAXAI_BILLING_CATALOGUE_API_KEY: 'bk_cat_test_viewer_key',
 };
 
 const PRODUCT = {
@@ -99,15 +99,34 @@ test('loads only a sanitised build-time commercial snapshot', async () => {
     requests.every(
       ({ init }) =>
         init.headers.Authorization ===
-        `Bearer ${ENV.MAXAI_BILLING_CATALOGUE_BEARER_TOKEN}`,
+        `ApiKey ${ENV.MAXAI_BILLING_CATALOGUE_API_KEY}`,
     ),
   );
   assert.ok(
     !JSON.stringify(snapshot).includes(
-      ENV.MAXAI_BILLING_CATALOGUE_BEARER_TOKEN,
+      ENV.MAXAI_BILLING_CATALOGUE_API_KEY,
     ),
   );
   assert.ok(!JSON.stringify(snapshot).includes(ENV.MAXAI_BILLING_CATALOGUE_API_BASE_URL));
+});
+
+test('retains bearer token support for local rollback compatibility', async () => {
+  const { fetchImplementation, requests } = createBillingFetch();
+  await loadBillingCatalogueSnapshot({
+    env: {
+      MAXAI_BILLING_CATALOGUE_API_BASE_URL:
+        ENV.MAXAI_BILLING_CATALOGUE_API_BASE_URL,
+      MAXAI_BILLING_CATALOGUE_BEARER_TOKEN: 'legacy.viewer.token',
+    },
+    fetchImplementation,
+    now: new Date('2026-08-31T00:00:00.000Z'),
+  });
+
+  assert.ok(
+    requests.every(
+      ({ init }) => init.headers.Authorization === 'Bearer legacy.viewer.token',
+    ),
+  );
 });
 
 test('missing build-only Billing configuration falls back without a request', async () => {

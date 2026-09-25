@@ -6,9 +6,9 @@ import { spawn } from 'node:child_process';
 
 import { verifyDistNoSecrets } from './verify-dist-secrets.mjs';
 
-const bearerToken = 'fixture-billing-token-do-not-ship';
+const apiKey = 'fixture-billing-api-key-do-not-ship';
 const server = createServer((request, response) => {
-  assert.equal(request.headers.authorization, `Bearer ${bearerToken}`);
+  assert.equal(request.headers.authorization, `ApiKey ${apiKey}`);
   const url = new URL(request.url, 'http://127.0.0.1');
   let data;
 
@@ -70,7 +70,7 @@ try {
     env: {
       ...process.env,
       MAXAI_BILLING_CATALOGUE_API_BASE_URL: baseUrl,
-      MAXAI_BILLING_CATALOGUE_BEARER_TOKEN: bearerToken,
+      MAXAI_BILLING_CATALOGUE_API_KEY: apiKey,
       MAXAI_BILLING_CATALOGUE_REQUIRED: 'true',
     },
     stdio: 'inherit',
@@ -87,7 +87,7 @@ try {
   await verifyDistNoSecrets({
     env: {
       MAXAI_BILLING_CATALOGUE_API_BASE_URL: baseUrl,
-      MAXAI_BILLING_CATALOGUE_BEARER_TOKEN: bearerToken,
+      MAXAI_BILLING_CATALOGUE_API_KEY: apiKey,
       MAXAI_BILLING_CATALOGUE_REQUIRED: 'true',
     },
   });
