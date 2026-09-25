@@ -1,9 +1,16 @@
 import { verifiedBillingProducts } from '../data/product-catalogue.js';
 
-const BILLING_BRAND_ID = 'brand-maximisedai';
+const BILLING_BRAND_IDS = new Set(
+  Object.values(verifiedBillingProducts).map((product) => product.brandId),
+);
 const REQUEST_TIMEOUT_MS = 5000;
 const BILLING_PRODUCT_IDS = new Set(
   Object.values(verifiedBillingProducts).map((product) => product.productId),
+);
+const BILLING_PLAN_IDS = new Set(
+  Object.values(verifiedBillingProducts)
+    .map((product) => product.planId)
+    .filter(Boolean),
 );
 
 /** @param {unknown} value */
@@ -115,7 +122,7 @@ export function sanitiseCurrentPrice(current, billingType, now = new Date()) {
   if (!isRecord(current.price)) return null;
   const price = current.price;
 
-  if (price.kind === 'poa' && billingType === 'poa') {
+  if (price.kind === 'poa') {
     return { billingCadence: 'poa' };
   }
 
@@ -191,30 +198,46 @@ async function resolveCommercialProduct(
           typeof plan.isSellable === 'boolean',
       )
       .sort((left, right) => left.sortOrder - right.sortOrder);
-    const primaryPlan = plans.find((plan) => plan.isSellable === true);
+    const sellablePlans = plans.filter((plan) => plan.isSellable === true);
 
-    if (!primaryPlan) return fallback;
+    if (sellablePlans.length === 0) return [fallback];
 
-    const priceData = await fetchBillingJson(
-      baseUrl,
-      `/catalogue/plans/${encodeURIComponent(primaryPlan.planId)}/prices/current`,
-      credential,
-      fetchImplementation,
+    const selectedPlans =
+      BILLING_PLAN_IDS.size === 0
+        ? sellablePlans.slice(0, 1)
+        : sellablePlans.filter((plan) => BILLING_PLAN_IDS.has(plan.planId));
+    if (selectedPlans.length === 0) return [fallback];
+
+    return Promise.all(
+      selectedPlans.map(async (plan) => {
+        const priceData = await fetchBillingJson(
+          baseUrl,
+          `/catalogue/plans/${encodeURIComponent(plan.planId)}/prices/current`,
+          credential,
+          fetchImplementation,
+        );
+        const commercial = sanitiseCurrentPrice(
+          priceData.current,
+          plan.billingType,
+          now,
+        );
+
+        return {
+          ...fallback,
+          planId: plan.planId,
+          ...(typeof plan.name === 'string' ? { planName: plan.name } : {}),
+          displayName:
+            typeof plan.name === 'string' && selectedPlans.length > 1
+              ? plan.name
+              : fallback.displayName,
+          isSellable: true,
+          ...(commercial ?? {}),
+        };
+      }),
     );
-    const commercial = sanitiseCurrentPrice(
-      priceData.current,
-      primaryPlan.billingType,
-      now,
-    );
-
-    return {
-      ...fallback,
-      isSellable: true,
-      ...(commercial ?? {}),
-    };
   } catch (error) {
     if (required) throw error;
-    return fallback;
+    return [fallback];
   }
 }
 
@@ -261,16 +284,20 @@ export async function loadBillingCatalogueSnapshot({
 
   try {
     const baseUrl = validateBaseUrl(configuredUrl);
-    const productsData = await fetchBillingJson(
-      baseUrl,
-      `/catalogue/products?brandId=${BILLING_BRAND_ID}&lifecycleStatus=published`,
-      credential,
-      fetchImplementation,
+    const productResponses = await Promise.all(
+      [...BILLING_BRAND_IDS].map((brandId) =>
+        fetchBillingJson(
+          baseUrl,
+          `/catalogue/products?brandId=${encodeURIComponent(brandId)}&lifecycleStatus=published`,
+          credential,
+          fetchImplementation,
+        ),
+      ),
     );
 
-    if (!Array.isArray(productsData.items)) return null;
+    if (productResponses.some((data) => !Array.isArray(data.items))) return null;
 
-    const products = productsData.items.filter(
+    const products = productResponses.flatMap((data) => data.items).filter(
       (product) =>
         isRecord(product) &&
         typeof product.productId === 'string' &&
@@ -280,18 +307,20 @@ export async function loadBillingCatalogueSnapshot({
         product.lifecycleStatus === 'published',
     );
 
-    const resolvedProducts = await Promise.all(
-      products.map((product) =>
-        resolveCommercialProduct(
-          product,
-          baseUrl,
-          credential,
-          fetchImplementation,
-          now,
-          required,
+    const resolvedProducts = (
+      await Promise.all(
+        products.map((product) =>
+          resolveCommercialProduct(
+            product,
+            baseUrl,
+            credential,
+            fetchImplementation,
+            now,
+            required,
+          ),
         ),
-      ),
-    );
+      )
+    ).flat();
 
     if (required && resolvedProducts.length === 0) {
       throw new Error('Required Billing catalogue returned no recognised products.');

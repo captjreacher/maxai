@@ -10,7 +10,15 @@ const ENV = {
 
 const PRODUCT = {
   productId: 'product-maximisedai-landing-page',
+  brandId: 'brand-maximisedai',
   displayName: 'Landing Page Website',
+  lifecycleStatus: 'published',
+};
+
+const DRIVE_PRODUCT = {
+  productId: 'product-mgrnz-drive-programme',
+  brandId: 'brand-mgrnz',
+  displayName: 'DRIVE Productivity Improvement Programme',
   lifecycleStatus: 'published',
 };
 
@@ -38,16 +46,77 @@ function response(data, status = 200) {
   };
 }
 
-function createBillingFetch({ sellable = true, current = CURRENT_PRICE } = {}) {
+const DRIVE_PRICES = {
+  'plan-mgrnz-drive-one-month': {
+    billingType: 'one-off',
+    amountMinor: 125000,
+  },
+  'plan-mgrnz-drive-ongoing': {
+    billingType: 'monthly',
+    amountMinor: 110000,
+  },
+  'plan-mgrnz-drive-three-month': {
+    billingType: 'monthly',
+    amountMinor: 100000,
+  },
+};
+
+function fixedPrice(planId, amountMinor) {
+  return {
+    planVersionId: `pv-${planId}-v2`,
+    planId,
+    version: 2,
+    effectiveFrom: '2026-09-20T00:00:00.000Z',
+    effectiveTo: null,
+    status: 'published',
+    price: {
+      kind: 'fixed',
+      amountMinor,
+      currency: 'NZD',
+      taxTreatment: 'exclusive',
+      taxRate: 1500,
+    },
+  };
+}
+
+function createBillingFetch({ sellable = true, current = CURRENT_PRICE, includeDrive = false } = {}) {
   const requests = [];
   const fetchImplementation = async (input, init) => {
     requests.push({ input, init });
     const url = new URL(input);
 
     if (url.pathname.endsWith('/catalogue/products')) {
-      return response({ items: [PRODUCT] });
+      const brandId = url.searchParams.get('brandId');
+      return response({
+        items:
+          brandId === 'brand-maximisedai'
+            ? [PRODUCT]
+            : brandId === 'brand-mgrnz' && includeDrive
+              ? [DRIVE_PRODUCT]
+              : [],
+      });
     }
     if (url.pathname.endsWith('/catalogue/plans')) {
+      const productId = url.searchParams.get('productId');
+      if (productId === DRIVE_PRODUCT.productId) {
+        return response({
+          items: Object.entries(DRIVE_PRICES).map(
+            ([planId, { billingType }], index) => ({
+              planId,
+              productId,
+              name:
+                planId === 'plan-mgrnz-drive-one-month'
+                  ? 'DRIVE — One-month programme'
+                  : planId === 'plan-mgrnz-drive-ongoing'
+                    ? 'DRIVE — Ongoing'
+                    : 'DRIVE — Three-month sprint',
+              billingType,
+              sortOrder: (index + 1) * 10,
+              isSellable: true,
+            }),
+          ),
+        });
+      }
       return response({
         items: [
           {
@@ -61,6 +130,16 @@ function createBillingFetch({ sellable = true, current = CURRENT_PRICE } = {}) {
       });
     }
     if (url.pathname.endsWith('/prices/current')) {
+      const drivePlan = Object.entries(DRIVE_PRICES).find(([planId]) =>
+        url.pathname.includes(`/${planId}/`),
+      );
+      if (drivePlan) {
+        const [planId, { amountMinor }] = drivePlan;
+        return response({
+          planId,
+          current: fixedPrice(planId, amountMinor),
+        });
+      }
       return response({
         planId: 'plan-maximisedai-landing-page',
         current,
@@ -85,6 +164,7 @@ test('loads only a sanitised build-time commercial snapshot', async () => {
     products: [
       {
         productId: PRODUCT.productId,
+        planId: 'plan-maximisedai-landing-page',
         displayName: PRODUCT.displayName,
         lifecycleStatus: 'published',
         isSellable: true,
@@ -94,7 +174,7 @@ test('loads only a sanitised build-time commercial snapshot', async () => {
       },
     ],
   });
-  assert.equal(requests.length, 3);
+  assert.equal(requests.length, 4);
   assert.ok(
     requests.every(
       ({ init }) =>
@@ -108,6 +188,48 @@ test('loads only a sanitised build-time commercial snapshot', async () => {
     ),
   );
   assert.ok(!JSON.stringify(snapshot).includes(ENV.MAXAI_BILLING_CATALOGUE_API_BASE_URL));
+});
+
+test('loads all allow-listed sellable DRIVE plans with their own published prices', async () => {
+  const { fetchImplementation } = createBillingFetch({ includeDrive: true });
+  const snapshot = await loadBillingCatalogueSnapshot({
+    env: ENV,
+    fetchImplementation,
+    now: new Date('2026-09-22T00:00:00.000Z'),
+  });
+
+  const driveProducts = snapshot.products.filter(
+    (product) => product.productId === DRIVE_PRODUCT.productId,
+  );
+
+  assert.deepEqual(
+    driveProducts.map((product) => ({
+      planId: product.planId,
+      displayName: product.displayName,
+      priceDisplay: product.priceDisplay,
+      billingCadence: product.billingCadence,
+    })),
+    [
+      {
+        planId: 'plan-mgrnz-drive-one-month',
+        displayName: 'DRIVE — One-month programme',
+        priceDisplay: 'NZD $1,250.00 excl. GST · one-off',
+        billingCadence: 'one-off',
+      },
+      {
+        planId: 'plan-mgrnz-drive-ongoing',
+        displayName: 'DRIVE — Ongoing',
+        priceDisplay: 'NZD $1,100.00 excl. GST · per month',
+        billingCadence: 'monthly',
+      },
+      {
+        planId: 'plan-mgrnz-drive-three-month',
+        displayName: 'DRIVE — Three-month sprint',
+        priceDisplay: 'NZD $1,000.00 excl. GST · per month',
+        billingCadence: 'monthly',
+      },
+    ],
+  );
 });
 
 test('retains bearer token support for local rollback compatibility', async () => {
@@ -197,4 +319,26 @@ test('draft and superseded prices are never displayed', async (t) => {
       assert.equal(snapshot.products[0].isSellable, true);
     });
   }
+});
+
+test('published POA prices remain explicit even when the plan cadence is one-off', async () => {
+  const { fetchImplementation } = createBillingFetch({
+    current: {
+      ...CURRENT_PRICE,
+      price: {
+        kind: 'poa',
+        taxTreatment: 'exclusive',
+        taxRate: 1500,
+      },
+    },
+  });
+  const snapshot = await loadBillingCatalogueSnapshot({
+    env: ENV,
+    fetchImplementation,
+    now: new Date('2026-08-31T00:00:00.000Z'),
+  });
+
+  assert.equal(snapshot.products[0].priceDisplay, undefined);
+  assert.equal(snapshot.products[0].billingCadence, 'poa');
+  assert.equal(snapshot.products[0].isSellable, true);
 });
