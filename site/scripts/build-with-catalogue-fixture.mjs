@@ -13,43 +13,149 @@ const server = createServer((request, response) => {
   let data;
 
   if (url.pathname.endsWith('/catalogue/products')) {
-    assert.equal(url.searchParams.get('brandId'), 'brand-maximisedai');
     assert.equal(url.searchParams.get('lifecycleStatus'), 'published');
+    const brandId = url.searchParams.get('brandId');
     data = {
-      items: [
-        {
-          productId: 'product-maximisedai-landing-page',
-          displayName: 'Fixture Landing Page Website',
-          lifecycleStatus: 'published',
-        },
-      ],
+      items:
+        brandId === 'brand-maximisedai'
+          ? [
+              {
+                productId: 'product-maximisedai-landing-page',
+                displayName: 'Fixture Landing Page Website',
+                lifecycleStatus: 'published',
+              },
+            ]
+          : brandId === 'brand-mgrnz'
+            ? [
+                {
+                  productId: 'product-mgrnz-drive-programme',
+                  displayName: 'DRIVE Productivity Improvement Programme',
+                  lifecycleStatus: 'published',
+                },
+                {
+                  productId: 'product-mgrnz-drive-strategy-session',
+                  displayName: 'DRIVE Additional Strategy Session',
+                  lifecycleStatus: 'published',
+                },
+              ]
+          : [],
     };
   } else if (url.pathname.endsWith('/catalogue/plans')) {
-    data = {
-      items: [
-        {
-          planId: 'plan-maximisedai-landing-page',
-          productId: 'product-maximisedai-landing-page',
-          billingType: 'one-off',
-          sortOrder: 10,
-          isSellable: true,
-        },
-      ],
-    };
+    if (url.searchParams.get('productId') === 'product-mgrnz-drive-programme') {
+      data = {
+        items: [
+          {
+            planId: 'plan-mgrnz-drive-one-month',
+            productId: 'product-mgrnz-drive-programme',
+            name: 'DRIVE — One-month programme',
+            billingType: 'one-off',
+            sortOrder: 10,
+            isSellable: true,
+          },
+          {
+            planId: 'plan-mgrnz-drive-ongoing',
+            productId: 'product-mgrnz-drive-programme',
+            name: 'DRIVE — Ongoing',
+            billingType: 'monthly',
+            sortOrder: 20,
+            isSellable: true,
+          },
+          {
+            planId: 'plan-mgrnz-drive-three-month',
+            productId: 'product-mgrnz-drive-programme',
+            name: 'DRIVE — Three-month sprint',
+            billingType: 'monthly',
+            sortOrder: 30,
+            isSellable: true,
+          },
+        ],
+      };
+    } else if (
+      url.searchParams.get('productId') === 'product-mgrnz-drive-strategy-session'
+    ) {
+      data = {
+        items: [
+          {
+            planId: 'plan-mgrnz-drive-strategy-session',
+            productId: 'product-mgrnz-drive-strategy-session',
+            name: 'DRIVE — Additional strategy session',
+            billingType: 'one-off',
+            sortOrder: 10,
+            isSellable: true,
+          },
+        ],
+      };
+    } else {
+      data = {
+        items: [
+          {
+            planId: 'plan-maximisedai-landing-page',
+            productId: 'product-maximisedai-landing-page',
+            billingType: 'one-off',
+            sortOrder: 10,
+            isSellable: true,
+          },
+        ],
+      };
+    }
   } else if (url.pathname.endsWith('/prices/current')) {
-    data = {
-      current: {
-        status: 'published',
-        effectiveFrom: '2026-01-01T00:00:00.000Z',
-        effectiveTo: null,
-        price: {
-          kind: 'fixed',
-          amountMinor: 91000,
-          currency: 'NZD',
-          taxTreatment: 'exclusive',
+    const drivePrices = new Map([
+      [
+        'plan-mgrnz-drive-one-month',
+        { billingType: 'one-off', amountMinor: 125000 },
+      ],
+      [
+        'plan-mgrnz-drive-ongoing',
+        { billingType: 'monthly', amountMinor: 110000 },
+      ],
+      [
+        'plan-mgrnz-drive-three-month',
+        { billingType: 'monthly', amountMinor: 100000 },
+      ],
+    ]);
+    const drivePlan = [...drivePrices.keys()].find((planId) =>
+      url.pathname.includes(`/${planId}/`),
+    );
+    if (drivePlan) {
+      data = {
+        current: {
+          status: 'published',
+          effectiveFrom: '2026-09-20T00:00:00.000Z',
+          effectiveTo: null,
+          price: {
+            kind: 'fixed',
+            amountMinor: drivePrices.get(drivePlan).amountMinor,
+            currency: 'NZD',
+            taxTreatment: 'exclusive',
+          },
         },
-      },
-    };
+      };
+    } else if (url.pathname.includes('/plan-mgrnz-drive-strategy-session/')) {
+      data = {
+        current: {
+          status: 'published',
+          effectiveFrom: '2026-09-12T00:00:00.000Z',
+          effectiveTo: null,
+          price: {
+            kind: 'poa',
+          },
+        },
+      };
+    } else {
+      data = {
+        current: {
+          status: 'published',
+          effectiveFrom: '2026-01-01T00:00:00.000Z',
+          effectiveTo: null,
+          price: {
+            kind: 'fixed',
+            amountMinor: 91000,
+            currency: 'NZD',
+            taxTreatment: 'exclusive',
+          },
+        },
+      };
+    }
   } else {
     response.writeHead(404).end();
     return;
@@ -82,8 +188,15 @@ try {
   assert.equal(exitCode, 0, 'Astro production build failed');
 
   const productsHtml = await readFile(resolve('dist/products/index.html'), 'utf8');
+  const pricingHtml = await readFile(resolve('dist/pricing/index.html'), 'utf8');
   assert.match(productsHtml, /Fixture Landing Page Website/);
   assert.match(productsHtml, /NZD \$910\.00 excl\. GST · one-off/);
+  assert.match(productsHtml, /DRIVE — One-month programme/);
+  assert.match(productsHtml, /NZD \$1,250\.00 excl\. GST · one-off/);
+  assert.match(pricingHtml, /DRIVE productivity improvement offers/);
+  assert.match(pricingHtml, /NZD \$1,100\.00 excl\. GST · per month/);
+  assert.match(pricingHtml, /DRIVE Additional Strategy Session/);
+  assert.match(pricingHtml, /POA/);
   await verifyDistNoSecrets({
     env: {
       MAXAI_BILLING_CATALOGUE_API_BASE_URL: baseUrl,
