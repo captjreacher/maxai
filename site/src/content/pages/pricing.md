@@ -10,7 +10,7 @@ paths:
   id: "pricing-paths"
   eyebrow: "Commercial Pathways"
   heading: "Match the model to the work."
-  description: "Exact prices are not published yet. The structure below explains how different kinds of work are scoped and commercialised."
+  description: "Published product prices are loaded from Billing where available. The structure below explains how different kinds of work are scoped and commercialised."
   fitLabel: "Suitable for"
   modelLabel: "Commercial model"
   items:

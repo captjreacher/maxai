@@ -26,10 +26,10 @@ function validateBaseUrl(baseUrl) {
 /**
  * @param {string} baseUrl
  * @param {string} path
- * @param {string} bearerToken
+ * @param {{ scheme: 'Bearer' | 'ApiKey', value: string }} credential
  * @param {typeof fetch} fetchImplementation
  */
-async function fetchBillingJson(baseUrl, path, bearerToken, fetchImplementation) {
+async function fetchBillingJson(baseUrl, path, credential, fetchImplementation) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
@@ -38,7 +38,7 @@ async function fetchBillingJson(baseUrl, path, bearerToken, fetchImplementation)
       method: 'GET',
       headers: {
         Accept: 'application/json',
-        Authorization: `Bearer ${bearerToken}`,
+        Authorization: `${credential.scheme} ${credential.value}`,
       },
       signal: controller.signal,
     });
@@ -151,14 +151,14 @@ export function sanitiseCurrentPrice(current, billingType, now = new Date()) {
 /**
  * @param {Record<string, unknown>} product
  * @param {string} baseUrl
- * @param {string} bearerToken
+ * @param {{ scheme: 'Bearer' | 'ApiKey', value: string }} credential
  * @param {typeof fetch} fetchImplementation
  * @param {Date} now
  */
 async function resolveCommercialProduct(
   product,
   baseUrl,
-  bearerToken,
+  credential,
   fetchImplementation,
   now,
   required,
@@ -175,7 +175,7 @@ async function resolveCommercialProduct(
     const plansData = await fetchBillingJson(
       baseUrl,
       `/catalogue/plans?productId=${encodeURIComponent(productId)}`,
-      bearerToken,
+      credential,
       fetchImplementation,
     );
     if (!Array.isArray(plansData.items)) return fallback;
@@ -198,7 +198,7 @@ async function resolveCommercialProduct(
     const priceData = await fetchBillingJson(
       baseUrl,
       `/catalogue/plans/${encodeURIComponent(primaryPlan.planId)}/prices/current`,
-      bearerToken,
+      credential,
       fetchImplementation,
     );
     const commercial = sanitiseCurrentPrice(
@@ -219,6 +219,20 @@ async function resolveCommercialProduct(
 }
 
 /**
+ * @param {Record<string, string | undefined>} env
+ * @returns {{ scheme: 'Bearer' | 'ApiKey', value: string } | null}
+ */
+function catalogueCredentialFromEnv(env) {
+  const apiKey = env.MAXAI_BILLING_CATALOGUE_API_KEY?.trim();
+  if (apiKey) return { scheme: 'ApiKey', value: apiKey };
+
+  const bearerToken = env.MAXAI_BILLING_CATALOGUE_BEARER_TOKEN?.trim();
+  if (bearerToken) return { scheme: 'Bearer', value: bearerToken };
+
+  return null;
+}
+
+/**
  * Load a sanitised catalogue snapshot during Astro's server/build phase.
  * Missing configuration or any top-level catalogue failure returns null so
  * the public site keeps its explicit Request pricing fallback.
@@ -235,10 +249,10 @@ export async function loadBillingCatalogueSnapshot({
   now = new Date(),
 } = {}) {
   const configuredUrl = env.MAXAI_BILLING_CATALOGUE_API_BASE_URL?.trim();
-  const bearerToken = env.MAXAI_BILLING_CATALOGUE_BEARER_TOKEN?.trim();
+  const credential = catalogueCredentialFromEnv(env);
   const required = env.MAXAI_BILLING_CATALOGUE_REQUIRED === 'true';
 
-  if (!configuredUrl || !bearerToken) {
+  if (!configuredUrl || !credential) {
     if (required) {
       throw new Error('Required Billing catalogue build configuration is missing.');
     }
@@ -250,7 +264,7 @@ export async function loadBillingCatalogueSnapshot({
     const productsData = await fetchBillingJson(
       baseUrl,
       `/catalogue/products?brandId=${BILLING_BRAND_ID}&lifecycleStatus=published`,
-      bearerToken,
+      credential,
       fetchImplementation,
     );
 
@@ -271,7 +285,7 @@ export async function loadBillingCatalogueSnapshot({
         resolveCommercialProduct(
           product,
           baseUrl,
-          bearerToken,
+          credential,
           fetchImplementation,
           now,
           required,
