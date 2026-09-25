@@ -8,6 +8,11 @@
  * browser.
  */
 
+import {
+  getDrivePurchaseHref,
+  isFixedDriveCommercialOffer,
+} from './drive-purchase.js';
+
 /** @typedef {'discover' | 'ready' | 'implement' | 'validate' | 'evolve'} DriveStageId */
 
 /**
@@ -207,7 +212,7 @@ export function getDriveProductExperience(catalogue = null, driveStages = []) {
             : commercial.priceDisplay ?? offerWithProduct.pricingFallback
           : offerWithProduct.pricingFallback;
 
-      return {
+      const baseOffer = {
         ...offerWithProduct,
         productKey: undefined,
         name:
@@ -227,9 +232,19 @@ export function getDriveProductExperience(catalogue = null, driveStages = []) {
               ...(commercial.billingCadence
                 ? { billingCadence: commercial.billingCadence }
                 : {}),
-            }
+          }
           : null,
       };
+
+      if (isFixedDriveCommercialOffer(baseOffer)) {
+        return {
+          ...baseOffer,
+          ctaLabel: 'Get started',
+          ctaHref: getDrivePurchaseHref(baseOffer.planId) ?? baseOffer.ctaHref,
+        };
+      }
+
+      return baseOffer;
     }),
   }));
 }
