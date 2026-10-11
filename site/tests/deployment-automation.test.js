@@ -1,41 +1,23 @@
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { readFile, access } from 'node:fs/promises';
 import test from 'node:test';
 
-const workflow = await readFile(
-  new URL('../../.github/workflows/deploy-static-site.yml', import.meta.url),
-  'utf8',
-);
-const wrangler = JSON.parse(
-  (await readFile(new URL('../wrangler.jsonc', import.meta.url), 'utf8')).replace(
-    /^\s*\/\/.*$/gm,
-    '',
-  ),
-);
+const root = new URL('../../', import.meta.url);
 
-test('receives Billing repository_dispatch and retains manual recovery', () => {
-  assert.match(workflow, /repository_dispatch:/);
-  assert.match(workflow, /billing-maxai-catalogue-published/);
+test('the retired static tree has no production deployment entry point', async () => {
+  await assert.rejects(access(new URL('.github/workflows/deploy-static-site.yml', root)), { code: 'ENOENT' });
+  await assert.rejects(access(new URL('site/wrangler.jsonc', root)), { code: 'ENOENT' });
+  const pkg = JSON.parse(await readFile(new URL('site/package.json', root), 'utf8'));
+  assert.equal(pkg.scripts.deploy, undefined);
+});
+
+test('WordPress retains its independent main-only deployment path', async () => {
+  const workflow = await readFile(new URL('.github/workflows/deploy.yml', root), 'utf8');
+  assert.match(workflow, /push:\s+branches:\s+- main/);
   assert.match(workflow, /workflow_dispatch:/);
-  assert.match(workflow, /cancel-in-progress: false/);
-});
-
-test('builds from CI-only Billing secrets before deploying Static Assets', () => {
-  assert.match(workflow, /npm run build/);
-  assert.match(workflow, /secrets\.MAXAI_BILLING_CATALOGUE_API_BASE_URL/);
-  assert.match(workflow, /secrets\.MAXAI_BILLING_CATALOGUE_API_KEY/);
-  assert.doesNotMatch(workflow, /secrets\.MAXAI_BILLING_CATALOGUE_BEARER_TOKEN/);
-  assert.doesNotMatch(workflow, /ADMIN_AUTH_SIGNING_KEY_B64/);
-  assert.match(workflow, /MAXAI_BILLING_CATALOGUE_REQUIRED: 'true'/);
-  assert.match(workflow, /npm run verify:dist/);
-  assert.match(workflow, /npm run deploy/);
-  assert.doesNotMatch(workflow, /PUBLIC_MAXAI_BILLING|PUBLIC_CLOUDFLARE/);
-});
-
-test('targets a route-free Cloudflare Worker Static Assets deployment', () => {
-  assert.equal(wrangler.name, 'maxai');
-  assert.equal(wrangler.assets.directory, './dist');
-  assert.equal(wrangler.workers_dev, true);
-  assert.equal(wrangler.routes, undefined);
-  assert.equal(wrangler.route, undefined);
+  assert.match(workflow, /public\/wp-content\/themes\/saaslauncher/);
+  assert.match(workflow, /public\/wp-content\/mu-plugins/);
+  assert.match(workflow, /Deploy MaxAI MU plugins/);
+  assert.match(workflow, /Deploy SaasLauncher theme/);
+  assert.doesNotMatch(workflow, /repository_dispatch|wrangler|CLOUDFLARE/);
 });
