@@ -37,31 +37,28 @@ All commands are run from the root of the project, from a terminal:
 | `npm run preview`         | Preview your build locally, before deploying     |
 | `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
 
-## Catalogue-triggered production build
+## Retired static deployment copy
 
-Billing is the commercial source of truth. After a committed public
-MaximisedAI product/plan change or price publication, the Billing API sends the
-`billing-maxai-catalogue-published` repository dispatch. The
-`Deploy MaxAI Static Site` workflow runs the site tests, performs a required
-build-time catalogue read, checks that secret material is absent from `dist/`,
-and deploys `dist/` to the existing `maxai` Cloudflare Worker as Static
-Assets. The workflow can also be started manually with `workflow_dispatch`.
+The canonical production static site is [captjreacher/maximisedai-site](https://github.com/captjreacher/maximisedai-site).
+Cloudflare's active version aea10539 matches that repository's successful
+[deployment run 37939981704](https://github.com/captjreacher/maximisedai-site/actions/runs/37939981704)
+from commit 2433b744eedfcedd6c1eb84869ee7efcba2d93f5.
 
-Configure these as GitHub Actions repository or environment secrets:
+This site tree remains available for historical development, but its static
+production workflow, deploy script and Wrangler config have been removed to
+prevent it overwriting the canonical site. WordPress deployment in
+.github/workflows/deploy.yml remains unchanged.
 
-- `MAXAI_BILLING_CATALOGUE_API_BASE_URL`
-- `MAXAI_BILLING_CATALOGUE_API_KEY`
-- `CLOUDFLARE_API_TOKEN`
-- `CLOUDFLARE_ACCOUNT_ID`
+Billing catalogue refreshes must target captjreacher/maximisedai-site using
+billing-maxai-catalogue-published. The correction is prepared in BILLING #45;
+no live configuration has been changed. Maxai #5 is superseded for the BILLING
+release and must not be merged as its consumer dependency.
 
-`MAXAI_BILLING_CATALOGUE_API_KEY` must be a Billing API key whose hash is
-configured on Billing with `ADMIN_API_KEY_ROLES=runtime.viewer`. Do not store
-Billing's `ADMIN_AUTH_SIGNING_KEY_B64` in this repository.
-
-The Wrangler configuration intentionally contains no `route` or `routes`.
-Binding `maximisedai.com` and changing DNS are separate, explicitly approved
-cutover actions.
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
+Before an approved release, retire this duplicate path, release the canonical
+availability fix, then release the corrected Billing API and Cockpit in the
+sequence documented in BILLING's docs/offer-archiving-release.md. Cancelling
+previously queued/running static deploy runs and retiring this repository's
+Cloudflare deploy credentials are separate release-operator steps.
 
 ## 👀 Want to learn more?
 
