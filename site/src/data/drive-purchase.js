@@ -25,6 +25,8 @@ export function getDrivePurchaseHref(planId) {
  *   name?: string,
  *   priceDisplay?: string,
  *   commercialState?: {
+ *     planId?: string,
+ *     isArchived?: boolean,
  *     lifecycleStatus?: string,
  *     isSellable?: boolean,
  *     billingCadence?: string
@@ -34,8 +36,10 @@ export function getDrivePurchaseHref(planId) {
 export function isFixedDriveCommercialOffer(offer) {
   return (
     isFixedDrivePlanId(offer.planId) &&
+    offer.commercialState?.planId === offer.planId &&
     offer.commercialState?.lifecycleStatus === 'published' &&
     offer.commercialState?.isSellable === true &&
+    offer.commercialState?.isArchived !== true &&
     fixedDriveCadences.has(offer.commercialState?.billingCadence) &&
     typeof offer.priceDisplay === 'string' &&
     offer.priceDisplay.trim().length > 0 &&
@@ -50,6 +54,10 @@ export function isFixedDriveCommercialOffer(offer) {
  *   name?: string,
  *   priceDisplay?: string,
  *   commercialState?: {
+ *     planId?: string,
+ *     lifecycleStatus?: string,
+ *     isSellable?: boolean,
+ *     isArchived?: boolean,
  *     billingCadence?: string
  *   } | null
  * }} offer
@@ -66,6 +74,11 @@ export function isFixedDriveCommercialOffer(offer) {
 export function buildDrivePurchaseIntakeFields(offer, fields) {
   if (!isFixedDrivePlanId(offer.planId)) {
     throw new Error('Unknown DRIVE plan cannot become a commercial selection.');
+  }
+  if (!isFixedDriveCommercialOffer(offer)) {
+    throw new Error(
+      'Unavailable DRIVE offer cannot become a commercial selection.',
+    );
   }
 
   const notes = fields.notes?.trim();
