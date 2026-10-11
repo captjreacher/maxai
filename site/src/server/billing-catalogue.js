@@ -198,7 +198,9 @@ async function resolveCommercialProduct(
           typeof plan.isSellable === 'boolean',
       )
       .sort((left, right) => left.sortOrder - right.sortOrder);
-    const sellablePlans = plans.filter((plan) => plan.isSellable === true);
+    const sellablePlans = plans.filter(
+      (plan) => plan.isSellable === true && plan.isArchived !== true,
+    );
 
     if (sellablePlans.length === 0) return [fallback];
 

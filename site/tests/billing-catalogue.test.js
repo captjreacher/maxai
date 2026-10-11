@@ -2,11 +2,77 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { loadBillingCatalogueSnapshot } from '../src/server/billing-catalogue.js';
+import { getDriveProductExperience } from '../src/data/product-catalogue.js';
+import {
+  isFixedDriveCommercialOffer,
+  buildDrivePurchaseIntakeFields,
+} from '../src/data/drive-purchase.js';
 
 const ENV = {
   MAXAI_BILLING_CATALOGUE_API_BASE_URL: 'https://billing.example.test/api/v1',
   MAXAI_BILLING_CATALOGUE_API_KEY: 'bk_cat_test_viewer_key',
 };
+
+for (const [state, unavailableDrive] of Object.entries({
+  withdrawn: { isSellable: false },
+  archived: { isArchived: true, isSellable: false },
+  'archived with stale sellability': { isArchived: true, isSellable: true },
+  'omitted archived plan': { omitted: true },
+})) {
+  test(`${state} DRIVE offer cannot borrow a sellable sibling's price or purchase path`, async () => {
+    const { fetchImplementation, requests } = createBillingFetch({
+      includeDrive: true,
+      unavailableDrive,
+    });
+    const snapshot = await loadBillingCatalogueSnapshot({
+      env: ENV,
+      fetchImplementation,
+    });
+    const offers = getDriveProductExperience(snapshot, [
+      {
+        offers: [
+          {
+            productKey: 'driveOneMonth',
+            pricingFallback: 'Request pricing',
+            ctaLabel: 'Request DRIVE',
+          },
+          {
+            productKey: 'driveOngoing',
+            pricingFallback: 'Request pricing',
+            ctaLabel: 'Request DRIVE',
+          },
+        ],
+      },
+    ])[0].offers;
+    const [unavailable, sibling] = offers;
+    assert.equal(
+      snapshot.products.some(
+        (product) => product.planId === unavailable.planId,
+      ),
+      false,
+    );
+    assert.equal(
+      requests.some(({ input }) =>
+        input.includes(`/${unavailable.planId}/prices/current`),
+      ),
+      false,
+    );
+    assert.equal(unavailable.name, 'DRIVE — One-month programme');
+    assert.equal(unavailable.priceDisplay, 'Request pricing');
+    assert.equal(unavailable.ctaLabel, 'Request DRIVE');
+    assert.equal(unavailable.ctaHref, undefined);
+    assert.equal(isFixedDriveCommercialOffer(unavailable), false);
+    assert.throws(
+      () => buildDrivePurchaseIntakeFields(unavailable, {}),
+      /Unavailable DRIVE offer/,
+    );
+    assert.equal(isFixedDriveCommercialOffer(sibling), true);
+    assert.equal(
+      sibling.ctaHref,
+      '/drive/get-started/plan-mgrnz-drive-ongoing/',
+    );
+  });
+}
 
 const PRODUCT = {
   productId: 'product-maximisedai-landing-page',
@@ -79,7 +145,12 @@ function fixedPrice(planId, amountMinor) {
   };
 }
 
-function createBillingFetch({ sellable = true, current = CURRENT_PRICE, includeDrive = false } = {}) {
+function createBillingFetch({
+  sellable = true,
+  current = CURRENT_PRICE,
+  includeDrive = false,
+  unavailableDrive = null,
+} = {}) {
   const requests = [];
   const fetchImplementation = async (input, init) => {
     requests.push({ input, init });
@@ -100,8 +171,8 @@ function createBillingFetch({ sellable = true, current = CURRENT_PRICE, includeD
       const productId = url.searchParams.get('productId');
       if (productId === DRIVE_PRODUCT.productId) {
         return response({
-          items: Object.entries(DRIVE_PRICES).map(
-            ([planId, { billingType }], index) => ({
+          items: Object.entries(DRIVE_PRICES)
+            .map(([planId, { billingType }], index) => ({
               planId,
               productId,
               name:
@@ -113,8 +184,11 @@ function createBillingFetch({ sellable = true, current = CURRENT_PRICE, includeD
               billingType,
               sortOrder: (index + 1) * 10,
               isSellable: true,
-            }),
-          ),
+              ...(planId === 'plan-mgrnz-drive-one-month'
+                ? unavailableDrive
+                : {}),
+            }))
+            .filter((plan) => !plan.omitted),
         });
       }
       return response({
@@ -183,11 +257,13 @@ test('loads only a sanitised build-time commercial snapshot', async () => {
     ),
   );
   assert.ok(
+    !JSON.stringify(snapshot).includes(ENV.MAXAI_BILLING_CATALOGUE_API_KEY),
+  );
+  assert.ok(
     !JSON.stringify(snapshot).includes(
-      ENV.MAXAI_BILLING_CATALOGUE_API_KEY,
+      ENV.MAXAI_BILLING_CATALOGUE_API_BASE_URL,
     ),
   );
-  assert.ok(!JSON.stringify(snapshot).includes(ENV.MAXAI_BILLING_CATALOGUE_API_BASE_URL));
 });
 
 test('loads all allow-listed sellable DRIVE plans with their own published prices', async () => {
@@ -288,7 +364,9 @@ test('an unavailable Billing API falls back safely', async () => {
 });
 
 test('an unsellable plan suppresses pricing', async () => {
-  const { fetchImplementation, requests } = createBillingFetch({ sellable: false });
+  const { fetchImplementation, requests } = createBillingFetch({
+    sellable: false,
+  });
   const snapshot = await loadBillingCatalogueSnapshot({
     env: ENV,
     fetchImplementation,
@@ -300,7 +378,10 @@ test('an unsellable plan suppresses pricing', async () => {
     lifecycleStatus: 'published',
     isSellable: false,
   });
-  assert.equal(requests.some(({ input }) => input.includes('/prices/current')), false);
+  assert.equal(
+    requests.some(({ input }) => input.includes('/prices/current')),
+    false,
+  );
 });
 
 test('draft and superseded prices are never displayed', async (t) => {

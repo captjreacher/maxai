@@ -14,11 +14,28 @@ const fixedOffer = {
   name: 'DRIVE — One-month programme',
   priceDisplay: 'NZD $1,250.00 excl. GST · one-off',
   commercialState: {
+    planId: 'plan-mgrnz-drive-one-month',
     lifecycleStatus: 'published',
     isSellable: true,
     billingCadence: 'one-off',
   },
 };
+
+for (const commercialState of [
+  { ...fixedOffer.commercialState, planId: 'plan-mgrnz-drive-ongoing' },
+  { ...fixedOffer.commercialState, planId: undefined },
+  { ...fixedOffer.commercialState, isSellable: false },
+  { ...fixedOffer.commercialState, isArchived: true },
+]) {
+  test(`rejects unavailable or mismatched purchase state ${JSON.stringify(commercialState)}`, () => {
+    const offer = { ...fixedOffer, commercialState };
+    assert.equal(isFixedDriveCommercialOffer(offer), false);
+    assert.throws(
+      () => buildDrivePurchaseIntakeFields(offer, {}),
+      /Unavailable DRIVE offer/,
+    );
+  });
+}
 
 test('routes only fixed DRIVE Billing plans to get-started pages', () => {
   assert.equal(isFixedDrivePlanId('plan-mgrnz-drive-one-month'), true);
@@ -66,10 +83,19 @@ test('preserves Billing plan identity in the intake fields', () => {
 
   assert.equal(fields.category, 'DRIVE fixed-price offer');
   assert.equal(fields.timing, 'This month');
-  assert.equal(fields.serviceContext, 'DRIVE purchase request — plan-mgrnz-drive-one-month');
+  assert.equal(
+    fields.serviceContext,
+    'DRIVE purchase request — plan-mgrnz-drive-one-month',
+  );
   assert.match(fields.problem, /Billing plan ID: plan-mgrnz-drive-one-month/);
-  assert.match(fields.problem, /Billing product ID: product-mgrnz-drive-programme/);
-  assert.match(fields.problem, /Published price shown: NZD \$1,250\.00 excl\. GST · one-off/);
+  assert.match(
+    fields.problem,
+    /Billing product ID: product-mgrnz-drive-programme/,
+  );
+  assert.match(
+    fields.problem,
+    /Published price shown: NZD \$1,250\.00 excl\. GST · one-off/,
+  );
 });
 
 test('rejects unknown plan identifiers before building commercial intake', () => {

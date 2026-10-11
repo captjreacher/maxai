@@ -114,6 +114,7 @@ test('uses Billing product identity and commercial display only when supplied se
     products: [
       {
         productId: product.productId,
+        planId: product.planId,
         displayName: 'Billing-resolved landing page',
         lifecycleStatus: 'published',
         isSellable: true,
@@ -128,6 +129,7 @@ test('uses Billing product identity and commercial display only when supplied se
   assert.equal(offer.name, 'Billing-resolved landing page');
   assert.equal(offer.priceDisplay, 'Billing-resolved commercial display');
   assert.deepEqual(offer.commercialState, {
+    planId: product.planId,
     lifecycleStatus: 'published',
     isSellable: true,
   });

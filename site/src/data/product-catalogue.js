@@ -22,6 +22,7 @@ import {
  * @property {string} displayName
  * @property {'draft' | 'published' | 'deprecated' | 'retired'} lifecycleStatus
  * @property {boolean} isSellable
+ * @property {boolean=} isArchived
  * @property {string=} priceDisplay A server-formatted commercial display value.
  * @property {string=} currency
  * @property {'one-off' | 'monthly' | 'annual' | 'usage' | 'poa'=} billingCadence
@@ -195,21 +196,20 @@ export function getDriveProductExperience(catalogue = null, driveStages = []) {
         ...offer,
         ...verifiedProduct,
       };
-      const commercial =
-        (offerWithProduct.planId
-          ? productsByPlanId.get(offerWithProduct.planId)
-          : undefined) ??
-        (offerWithProduct.productId
-          ? productsById.get(offerWithProduct.productId)
-          : undefined);
+      // A missing plan may be withdrawn or archived; never borrow a sibling's price.
+      const commercial = offerWithProduct.planId
+        ? productsByPlanId.get(offerWithProduct.planId)
+        : productsById.get(offerWithProduct.productId);
       const isAvailable =
-        commercial?.lifecycleStatus === 'published' && commercial.isSellable;
+        commercial?.lifecycleStatus === 'published' &&
+        commercial.isSellable === true &&
+        commercial.isArchived !== true;
       const hasPoaPrice = commercial?.billingCadence === 'poa';
       const priceDisplay =
         commercial && isAvailable
           ? hasPoaPrice
             ? 'POA'
-            : commercial.priceDisplay ?? offerWithProduct.pricingFallback
+            : (commercial.priceDisplay ?? offerWithProduct.pricingFallback)
           : offerWithProduct.pricingFallback;
 
       const baseOffer = {
@@ -229,10 +229,13 @@ export function getDriveProductExperience(catalogue = null, driveStages = []) {
               ...(commercial.planId ? { planId: commercial.planId } : {}),
               lifecycleStatus: commercial.lifecycleStatus,
               isSellable: commercial.isSellable,
+              ...(commercial.isArchived !== undefined
+                ? { isArchived: commercial.isArchived }
+                : {}),
               ...(commercial.billingCadence
                 ? { billingCadence: commercial.billingCadence }
                 : {}),
-          }
+            }
           : null,
       };
 
